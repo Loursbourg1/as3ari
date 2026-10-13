@@ -14,14 +14,14 @@ const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? 'https://as3ari.verc
   .filter(Boolean);
 
 function corsHeaders(origin: string | null): Record<string, string> {
-  const h: Record<string, string> = { Vary: 'Origin' };
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
-    h['Access-Control-Allow-Origin'] = origin;
-    h['Access-Control-Allow-Methods'] = 'POST, OPTIONS';
-    h['Access-Control-Allow-Headers'] = 'authorization, x-client-info, apikey, content-type';
-    h['Access-Control-Max-Age'] = '600';
-  }
-  return h;
+  const allowed = origin && (ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app')) ? origin : 'https://as3ari.vercel.app';
+  return {
+    'Vary': 'Origin',
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Max-Age': '86400',
+  };
 }
 
 function json(status: number, body: unknown, origin: string | null): Response {

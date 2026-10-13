@@ -284,27 +284,14 @@ function mapMyReport(r: Record<string, unknown>): MyReport {
   };
 }
 
-export function createSupabaseContributionApi(client: SupabaseClient, opts: { submitVia: 'edge' | 'rpc' }): ContributionApi {
+export function createSupabaseContributionApi(client: SupabaseClient, _opts?: { submitVia?: 'edge' | 'rpc' }): ContributionApi {
   return {
     available: true,
     async submitReport(input) {
       const parsed = priceReportInput.safeParse(input);
       if (!parsed.success) throw new ApiError('invalid_input');
       const v = parsed.data;
-      if (opts.submitVia === 'edge') {
-        const { data, error } = await client.functions.invoke('submit-report', { body: v });
-        if (error) {
-          let code = 'server_error';
-          try {
-            const body = await (error as { context?: Response }).context?.json();
-            code = toReportErrorCode(body?.error);
-          } catch {
-            /* keep generic code */
-          }
-          throw new ApiError(code);
-        }
-        return data as { id: string; status: ReportStatus; normalized_price: string; comparison_unit: ComparisonUnit };
-      }
+
       if (!v.shop_id && v.location_label) {
         // Upload photo to Supabase Storage if a data URL was provided.
         // Storing raw base64 in DB columns is wasteful; use Storage instead.
