@@ -235,6 +235,11 @@ export const en = {
   'auth.magicLinkSent': 'Check your email for a sign-in link.',
   'auth.forgotPassword': 'Forgot password?',
   'auth.resetSent': 'Check your email for password reset instructions.',
+  'auth.newPassword': 'New password',
+  'auth.setNewPassword': 'Set new password',
+  'auth.updatePassword': 'Save new password',
+  'auth.passwordUpdated': 'Your password has been updated successfully.',
+
 
   'auth.signUpSent': 'Account created. Confirm your email using the link we sent, then come back.',
   'auth.passwordHint': 'At least 10 characters with upper-case, lower-case letters and digits.',

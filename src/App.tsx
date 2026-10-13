@@ -21,6 +21,8 @@ const MyReportsPage = lazy(() => import('./pages/MyReportsPage'));
 const ModerationPage = lazy(() => import('./pages/ModerationPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+
 
 
 function NotFound() {
@@ -59,6 +61,8 @@ export default function App() {
                   <Route path="moderate" element={<ModerationPage />} />
                   <Route path="about" element={<AboutPage />} />
                   <Route path="terms" element={<TermsPage />} />
+                  <Route path="reset-password" element={<ResetPasswordPage />} />
+
 
                   <Route path="*" element={<NotFound />} />
                 </Route>

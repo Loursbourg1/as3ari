@@ -236,6 +236,11 @@ export const ar: Record<MessageKey, string> = {
   'auth.magicLinkSent': 'تحقق من بريدك للحصول على رابط الدخول.',
   'auth.forgotPassword': 'نسيت كلمة المرور؟',
   'auth.resetSent': 'تحقق من بريدك الإلكتروني للحصول على تعليمات إعادة تعيين كلمة المرور.',
+  'auth.newPassword': 'كلمة المرور الجديدة',
+  'auth.setNewPassword': 'تعيين كلمة مرور جديدة',
+  'auth.updatePassword': 'حفظ كلمة المرور الجديدة',
+  'auth.passwordUpdated': 'تم تحديث كلمة المرور بنجاح.',
+
 
   'auth.signUpSent': 'تم إنشاء الحساب. أكد بريدك عبر الرابط المرسل ثم عد.',
   'auth.passwordHint': '10 أحرف على الأقل مع أحرف كبيرة وصغيرة وأرقام.',

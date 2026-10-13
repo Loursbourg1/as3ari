@@ -236,6 +236,11 @@ export const fr: Record<MessageKey, string> = {
   'auth.magicLinkSent': 'Consultez vos e-mails pour le lien de connexion.',
   'auth.forgotPassword': 'Mot de passe oublié ?',
   'auth.resetSent': 'Consultez vos e-mails pour réinitialiser votre mot de passe.',
+  'auth.newPassword': 'Nouveau mot de passe',
+  'auth.setNewPassword': 'Définir un nouveau mot de passe',
+  'auth.updatePassword': 'Enregistrer le nouveau mot de passe',
+  'auth.passwordUpdated': 'Votre mot de passe a été mis à jour avec succès.',
+
 
   'auth.signUpSent': 'Compte créé. Confirmez votre e-mail avec le lien envoyé, puis revenez.',
   'auth.passwordHint': 'Au moins 10 caractères avec majuscules, minuscules et chiffres.',
