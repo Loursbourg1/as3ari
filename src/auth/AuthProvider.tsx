@@ -19,9 +19,9 @@ interface AuthValue {
   email: string | null;
   username: string | null;
   emailVerified: boolean;
-  signInWithPassword(email: string, password: string): Promise<boolean>;
-  signUp(email: string, password: string, next: string): Promise<boolean>;
-  sendMagicLink(email: string, next: string): Promise<boolean>;
+  signInWithPassword(email: string, password: string): Promise<{ ok: boolean; error?: string }>;
+  signUp(email: string, password: string, next: string): Promise<{ ok: boolean; session?: boolean; error?: string }>;
+  sendMagicLink(email: string, next: string): Promise<{ ok: boolean; error?: string }>;
   signOut(): Promise<void>;
 }
 
@@ -84,7 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signInWithPassword(email, password) {
         if (supabase) {
           const { error } = await supabase.auth.signInWithPassword({ email, password });
-          return !error;
+          if (error) return { ok: false, error: error.message };
+          return { ok: true };
         }
         // Local authentication fallback
         const localUser: LocalUser = {
@@ -101,16 +102,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } as SupabaseUser,
           access_token: 'local-test-token',
         } as Session);
-        return true;
+        return { ok: true };
       },
       async signUp(email, password, next) {
         if (supabase) {
-          const { error } = await supabase.auth.signUp({
+          const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: { emailRedirectTo: callbackUrl(next) },
           });
-          return !error;
+          if (error) return { ok: false, error: error.message };
+          // If Supabase has email confirmation disabled, session is returned immediately
+          if (data?.session) {
+            setSession(data.session);
+          }
+          return { ok: true, session: Boolean(data?.session) };
         }
         // Local signup fallback (instantly verified for seamless local testing)
         const localUser: LocalUser = {
@@ -127,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } as SupabaseUser,
           access_token: 'local-test-token',
         } as Session);
-        return true;
+        return { ok: true, session: true };
       },
       async sendMagicLink(email, next) {
         if (supabase) {
@@ -135,7 +141,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email,
             options: { emailRedirectTo: callbackUrl(next), shouldCreateUser: true },
           });
-          return !error;
+          if (error) return { ok: false, error: error.message };
+          return { ok: true };
         }
         const localUser: LocalUser = {
           id: 'usr_' + btoa(email).slice(0, 16),
@@ -151,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } as SupabaseUser,
           access_token: 'local-test-token',
         } as Session);
-        return true;
+        return { ok: true };
       },
       async signOut() {
         if (supabase) {

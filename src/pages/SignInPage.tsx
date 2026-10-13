@@ -36,11 +36,19 @@ export default function SignInPage() {
     setMsg(null);
     const cleanEmail = email.trim().toLowerCase();
     if (mode === 'signin') {
-      const ok = await auth.signInWithPassword(cleanEmail, password);
-      if (!ok) setMsg({ tone: 'warn', text: t('auth.failed') });
+      const res = await auth.signInWithPassword(cleanEmail, password);
+      if (!res.ok) setMsg({ tone: 'warn', text: res.error || t('auth.failed') });
     } else {
-      const ok = await auth.signUp(cleanEmail, password, next);
-      setMsg(ok ? { tone: 'good', text: t('auth.signUpSent') } : { tone: 'warn', text: t('auth.signUpFailed') });
+      const res = await auth.signUp(cleanEmail, password, next);
+      if (res.ok) {
+        if (res.session) {
+          // Instantly logged in (e.g. email confirmation disabled)
+          return;
+        }
+        setMsg({ tone: 'good', text: t('auth.signUpSent') });
+      } else {
+        setMsg({ tone: 'warn', text: res.error || t('auth.signUpFailed') });
+      }
     }
     setBusy(false);
   }
@@ -48,8 +56,8 @@ export default function SignInPage() {
   async function magic() {
     if (!email.includes('@')) return;
     setBusy(true);
-    const ok = await auth.sendMagicLink(email.trim().toLowerCase(), next);
-    setMsg(ok ? { tone: 'good', text: t('auth.magicLinkSent') } : { tone: 'warn', text: t('common.error') });
+    const res = await auth.sendMagicLink(email.trim().toLowerCase(), next);
+    setMsg(res.ok ? { tone: 'good', text: t('auth.magicLinkSent') } : { tone: 'warn', text: res.error || t('common.error') });
     setBusy(false);
   }
 

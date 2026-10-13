@@ -145,22 +145,32 @@ export function createSupabaseRepository(client: SupabaseClient, opts: { showDem
     },
 
     async listFeed(q): Promise<Page<PriceObservation>> {
-      let query = client.from('public_price_observations').select('*', { count: 'exact' });
+      const buildQuery = (wilaya?: number) => {
+        let query = client.from('public_price_observations').select('*', { count: 'exact' });
+        if (wilaya !== undefined) query = query.eq('wilaya_code', wilaya);
+        if (q.areaId) query = query.eq('area_id', q.areaId);
+        if (q.productId) query = query.eq('product_id', q.productId);
+        if (!opts.showDemoData) query = query.eq('is_demo', false);
 
-      if (q.wilayaCode !== undefined) query = query.eq('wilaya_code', q.wilayaCode);
-      if (q.areaId) query = query.eq('area_id', q.areaId);
-      if (q.productId) query = query.eq('product_id', q.productId);
-      if (!opts.showDemoData) query = query.eq('is_demo', false);
+        if (q.sort === 'price') {
+          query = query.order('normalized_price', { ascending: true });
+        } else {
+          query = query.order('observed_on', { ascending: false }).order('submitted_at', { ascending: false });
+        }
+        return query.range(q.offset, q.offset + q.limit - 1);
+      };
 
-      if (q.sort === 'price') {
-        query = query.order('normalized_price', { ascending: true });
-      } else {
-        query = query.order('observed_on', { ascending: false }).order('submitted_at', { ascending: false });
+      const { data, error, count } = await buildQuery(q.wilayaCode);
+      if (error) fail(error);
+
+      // If a specific wilaya has no records yet and showDemoData is on, fall back to nationwide
+      if ((!data || data.length === 0) && q.wilayaCode !== undefined && opts.showDemoData) {
+        const fallback = await buildQuery(undefined);
+        if (!fallback.error && fallback.data && fallback.data.length > 0) {
+          return { items: fallback.data.map(mapObservation), total: fallback.count ?? null, offset: q.offset, limit: q.limit };
+        }
       }
 
-      query = query.range(q.offset, q.offset + q.limit - 1);
-      const { data, error, count } = await query;
-      if (error) fail(error);
       return { items: (data ?? []).map(mapObservation), total: count ?? null, offset: q.offset, limit: q.limit };
     },
 
