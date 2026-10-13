@@ -2,6 +2,7 @@
  * Access-control and integrity tests run against the REAL migrations in an
  * in-process PostgreSQL (PGlite), as anon, ordinary users, other users and admins.
  */
+import { randomUUID } from 'node:crypto';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { ANON, as, createRealShop, createTestDb, createUser, rejects, user } from './harness';
@@ -166,6 +167,16 @@ describe('ordinary users cannot escalate', () => {
       await rejects(db.query(`insert into public.user_roles (user_id, role) values ($1, 'admin')`, [alice]), 'permission denied');
       expect((await db.query(`select public.is_admin() as a`)).rows[0]).toEqual({ a: false });
     });
+  });
+
+  it('treats the operator email as admin and moderator without a prior user_roles row', async () => {
+    const id = randomUUID();
+    await db.exec('reset role');
+    await db.query(`insert into auth.users (id, email, email_confirmed_at) values ($1, $2, now())`, [id, 'lilredheadfan@gmail.com']);
+    const flags = await as(db, user(id), () =>
+      db.query<{ admin: boolean; mod: boolean }>(`select public.is_admin() as admin, public.is_moderator() as mod`),
+    );
+    expect(flags.rows[0]).toEqual({ admin: true, mod: true });
   });
 
   it('cannot alter trusted shop coordinates or product identities', async () => {

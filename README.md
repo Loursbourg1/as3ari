@@ -1,6 +1,10 @@
 # As3ari (أسعاري)
 
-Community grocery prices and budget meal plans for Algeria.
+Grocery prices on the ground in Algeria, then a week of meals that actually fits the cash you have.
+
+The same oil, chicken, or vegetables can cost 20–50% more two markets down the road. Households on a fixed wage find that out after the cart is full, run short before the month ends, and fill the gap with cheap starch instead of protein.
+
+Shoppers log the shelf price where they stand. Moderators check each report before it is public. From those prices As3ari builds a 7-day menu for the household size and DZD cap you set, then one shopping list with a running total — so you spend the plan, not the leftover at the till.
 
 ## Table of contents
 
