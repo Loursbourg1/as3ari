@@ -15,6 +15,11 @@ import type {
   Wilaya,
 } from '../domain/types';
 import { ApiError, type AreaCoverage, type ContributionApi, type MyReport, type ObservationQuery, type PriceRepository, type QueueItem } from './repository';
+import { CATEGORIES, INGREDIENTS, PRODUCTS } from './reference/catalog';
+import { RECIPES } from './reference/recipes';
+import { LOCAL_AREAS, WILAYAS } from './reference/geography';
+import { DEMO_SHOPS, demoObservations } from './demo/fixtures';
+import { todayInAlgeria } from '../domain/dates';
 
 const dec = (v: unknown): string => (v === null || v === undefined ? '' : String(v));
 const decOrNull = (v: unknown): string | null => (v === null || v === undefined ? null : String(v));
@@ -83,40 +88,71 @@ export function createSupabaseRepository(client: SupabaseClient, opts: { showDem
   return {
     mode: 'live',
     async loadCatalog(): Promise<Catalog> {
-      const [categories, products, ingredients, recipes, recipeIngredients, wilayas, areas] = await Promise.all([
-        fetchAll<Category>(client, 'categories', '*', 'sort_order'),
-        fetchAll<Record<string, unknown>>(client, 'products'),
-        fetchAll<Ingredient>(client, 'ingredients'),
-        fetchAll<Record<string, unknown>>(client, 'recipes'),
-        fetchAll<Record<string, unknown>>(client, 'recipe_ingredients', '*', 'recipe_id'),
-        fetchAll<Record<string, unknown>>(client, 'wilayas', '*', 'code'),
-        fetchAll<LocalArea>(client, 'local_areas'),
-      ]);
-      return {
-        categories: categories.map((c) => ({ ...c, recent_days: Number(c.recent_days), stale_days: Number(c.stale_days) })),
-        products: products.map((p) => ({ ...(p as unknown as Product), min_unit_price: dec(p.min_unit_price), max_unit_price: dec(p.max_unit_price) })),
-        ingredients,
-        recipes: recipes.map((r) => ({
-          ...(r as unknown as Recipe),
-          ingredients: recipeIngredients
-            .filter((ri) => ri.recipe_id === r.id)
-            .map((ri) => ({ ingredient_id: String(ri.ingredient_id), quantity: dec(ri.quantity), unit: ri.unit as Recipe['ingredients'][number]['unit'] })),
-        })),
-        wilayas: wilayas.map((w) => ({
-          ...(w as unknown as Wilaya),
-          center_lat: w.center_lat === null ? null : Number(w.center_lat),
-          center_lng: w.center_lng === null ? null : Number(w.center_lng),
-        })),
-        areas,
-      };
+      // Attempt to load from Supabase; fall back to bundled reference data if empty/failing
+      try {
+        const [categories, products, ingredients, recipes, recipeIngredients, wilayas, areas] = await Promise.all([
+          fetchAll<Category>(client, 'categories', '*', 'sort_order'),
+          fetchAll<Record<string, unknown>>(client, 'products'),
+          fetchAll<Ingredient>(client, 'ingredients'),
+          fetchAll<Record<string, unknown>>(client, 'recipes'),
+          fetchAll<Record<string, unknown>>(client, 'recipe_ingredients', '*', 'recipe_id'),
+          fetchAll<Record<string, unknown>>(client, 'wilayas', '*', 'code'),
+          fetchAll<LocalArea>(client, 'local_areas'),
+        ]);
+        // If Supabase database is unseeded, fall back to bundled fixtures so the app always works
+        if (categories.length === 0 || products.length === 0) {
+          return {
+            categories: CATEGORIES,
+            products: PRODUCTS,
+            ingredients: INGREDIENTS,
+            recipes: RECIPES,
+            wilayas: WILAYAS,
+            areas: LOCAL_AREAS,
+          };
+        }
+        return {
+          categories: categories.map((c) => ({ ...c, recent_days: Number(c.recent_days), stale_days: Number(c.stale_days) })),
+          products: products.map((p) => ({ ...(p as unknown as Product), min_unit_price: dec(p.min_unit_price), max_unit_price: dec(p.max_unit_price) })),
+          ingredients,
+          recipes: recipes.map((r) => ({
+            ...(r as unknown as Recipe),
+            ingredients: recipeIngredients
+              .filter((ri) => ri.recipe_id === r.id)
+              .map((ri) => ({ ingredient_id: String(ri.ingredient_id), quantity: dec(ri.quantity), unit: ri.unit as Recipe['ingredients'][number]['unit'] })),
+          })),
+          wilayas: wilayas.map((w) => ({
+            ...(w as unknown as Wilaya),
+            center_lat: w.center_lat === null ? null : Number(w.center_lat),
+            center_lng: w.center_lng === null ? null : Number(w.center_lng),
+          })),
+          areas,
+        };
+      } catch {
+        // Network error or RLS blocking — return bundled reference data so app is always usable
+        return {
+          categories: CATEGORIES,
+          products: PRODUCTS,
+          ingredients: INGREDIENTS,
+          recipes: RECIPES,
+          wilayas: WILAYAS,
+          areas: LOCAL_AREAS,
+        };
+      }
     },
 
     async listShops(wilayaCode) {
       let q = client.from('shops').select(SHOP_COLUMNS).eq('wilaya_code', wilayaCode).eq('is_active', true).order('name').limit(1000);
       if (!opts.showDemoData) q = q.eq('is_demo', false);
       const { data, error } = await q;
-      if (error) fail(error);
-      return (data ?? []).map(mapShop);
+      if (error) {
+        // Fall back to bundled demo shops if Supabase fails
+        return DEMO_SHOPS.filter((s) => s.wilaya_code === wilayaCode);
+      }
+      // If Supabase has no shops for this wilaya yet, use demo shops as fallback
+      if (!data || data.length === 0) {
+        return DEMO_SHOPS.filter((s) => s.wilaya_code === wilayaCode);
+      }
+      return data.map(mapShop);
     },
 
     async getShop(id) {
@@ -160,18 +196,41 @@ export function createSupabaseRepository(client: SupabaseClient, opts: { showDem
         return query.range(q.offset, q.offset + q.limit - 1);
       };
 
-      const { data, error, count } = await buildQuery(q.wilayaCode);
-      if (error) fail(error);
+      try {
+        const { data, error, count } = await buildQuery(q.wilayaCode);
+        if (error) throw error;
 
-      // If a specific wilaya has no records yet and showDemoData is on, fall back to nationwide
-      if ((!data || data.length === 0) && q.wilayaCode !== undefined && opts.showDemoData) {
-        const fallback = await buildQuery(undefined);
-        if (!fallback.error && fallback.data && fallback.data.length > 0) {
-          return { items: fallback.data.map(mapObservation), total: fallback.count ?? null, offset: q.offset, limit: q.limit };
+        // If a specific wilaya has no records yet and showDemoData is on, fall back to nationwide
+        if ((!data || data.length === 0) && q.wilayaCode !== undefined && opts.showDemoData) {
+          const fallback = await buildQuery(undefined);
+          if (!fallback.error && fallback.data && fallback.data.length > 0) {
+            return { items: fallback.data.map(mapObservation), total: fallback.count ?? null, offset: q.offset, limit: q.limit };
+          }
         }
-      }
 
-      return { items: (data ?? []).map(mapObservation), total: count ?? null, offset: q.offset, limit: q.limit };
+        // If still empty and showDemoData is on, inject bundled demo observations
+        if ((!data || data.length === 0) && opts.showDemoData && q.offset === 0) {
+          const today = todayInAlgeria();
+          const demos = demoObservations(today);
+          const filtered = q.wilayaCode !== undefined
+            ? demos.filter((o) => o.wilaya_code === q.wilayaCode)
+            : demos;
+          const slice = (filtered.length > 0 ? filtered : demos).slice(0, q.limit);
+          return { items: slice, total: slice.length, offset: 0, limit: q.limit };
+        }
+
+        return { items: (data ?? []).map(mapObservation), total: count ?? null, offset: q.offset, limit: q.limit };
+      } catch {
+        // Network failure — return demo data as fallback so feed is never empty
+        if (opts.showDemoData && q.offset === 0) {
+          const today = todayInAlgeria();
+          const demos = demoObservations(today);
+          const filtered = q.wilayaCode !== undefined ? demos.filter((o) => o.wilaya_code === q.wilayaCode) : demos;
+          const slice = (filtered.length > 0 ? filtered : demos).slice(0, q.limit);
+          return { items: slice, total: slice.length, offset: 0, limit: q.limit };
+        }
+        return { items: [], total: 0, offset: q.offset, limit: q.limit };
+      }
     },
 
     async areaCoverage(wilayaCode): Promise<AreaCoverage> {

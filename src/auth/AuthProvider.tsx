@@ -84,7 +84,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signInWithPassword(email, password) {
         if (supabase) {
           const { error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) return { ok: false, error: error.message };
+          if (error) {
+            const msg = error.message.toLowerCase();
+            if (msg.includes('rate limit') || msg.includes('too many')) {
+              return { ok: false, error: 'Too many attempts. Please wait a few minutes before trying again.' };
+            }
+            if (msg.includes('invalid login') || msg.includes('invalid credentials') || msg.includes('wrong password')) {
+              return { ok: false, error: 'Incorrect email or password.' };
+            }
+            return { ok: false, error: error.message };
+          }
           return { ok: true };
         }
         // Local authentication fallback
@@ -111,7 +120,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             password,
             options: { emailRedirectTo: callbackUrl(next) },
           });
-          if (error) return { ok: false, error: error.message };
+          if (error) {
+            const msg = error.message.toLowerCase();
+            if (msg.includes('rate limit') || msg.includes('too many') || msg.includes('over_email_send_rate_limit')) {
+              return { ok: false, error: 'Email rate limit reached. Please wait a few minutes, or use the magic-link option below.' };
+            }
+            if (msg.includes('already registered') || msg.includes('already been registered') || msg.includes('user already')) {
+              return { ok: false, error: 'This email is already registered — try signing in instead.' };
+            }
+            return { ok: false, error: error.message };
+          }
           // If Supabase has email confirmation disabled, session is returned immediately
           if (data?.session) {
             setSession(data.session);
@@ -141,7 +159,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email,
             options: { emailRedirectTo: callbackUrl(next), shouldCreateUser: true },
           });
-          if (error) return { ok: false, error: error.message };
+          if (error) {
+            const msg = error.message.toLowerCase();
+            if (msg.includes('rate limit') || msg.includes('too many')) {
+              return { ok: false, error: 'Email rate limit reached. Please wait a few minutes before trying again.' };
+            }
+            return { ok: false, error: error.message };
+          }
           return { ok: true };
         }
         const localUser: LocalUser = {

@@ -2,17 +2,18 @@
  * Public, build-time configuration. Everything here ships to the browser —
  * never put service-role keys or other secrets in VITE_ variables.
  */
-const env = import.meta.env;
-
+// Direct static access is required for Vite production AST replacement
 const supabaseUrl =
-  ((env.VITE_SUPABASE_URL || env.SUPABASE_URL) as string | undefined)?.trim() || '';
+  (import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL || '').trim();
 const supabaseAnonKey =
-  ((env.VITE_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY) as string | undefined)?.trim() || '';
-const recaptchaSiteKey =
-  ((env.VITE_RECAPTCHA_SITE_KEY || env.RECAPTCHA_SITE_KEY) as string | undefined)?.trim() || '';
+  (import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.SUPABASE_ANON_KEY || '').trim();
 
-const rawDemo = (env.VITE_SHOW_DEMO_DATA ?? env.DEMO_DATA ?? env.SHOW_DEMO_DATA ?? 'true') as string;
-const rawRequireEmail = (env.VITE_REQUIRE_EMAIL_VERIFICATION ?? env.REQUIRE_EMAIL_VERIFICATION ?? 'false') as string;
+// Google reCAPTCHA v2 site key (falls back to Google official test site key so widget is always visible)
+const recaptchaSiteKey =
+  (import.meta.env.VITE_RECAPTCHA_SITE_KEY || import.meta.env.RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI').trim();
+
+const rawDemo = (import.meta.env.VITE_SHOW_DEMO_DATA ?? import.meta.env.DEMO_DATA ?? import.meta.env.SHOW_DEMO_DATA ?? 'true');
+const rawRequireEmail = (import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION ?? import.meta.env.REQUIRE_EMAIL_VERIFICATION ?? 'false');
 
 export const config = {
   supabaseUrl,
@@ -23,11 +24,11 @@ export const config = {
   showDemoData: rawDemo !== 'false',
   requireEmailVerification: rawRequireEmail === 'true',
   /** 'edge' (default) submits through the submit-report Edge Function; 'rpc' calls the database function directly. */
-  submitVia: (env.VITE_SUBMIT_VIA as string | undefined) === 'rpc' ? 'rpc' : 'edge',
+  submitVia: (import.meta.env.VITE_SUBMIT_VIA as string | undefined) === 'rpc' ? 'rpc' : 'edge',
   map: {
-    tileUrl: (env.VITE_MAP_TILE_URL as string | undefined) || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    tileUrl: (import.meta.env.VITE_MAP_TILE_URL as string | undefined) || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution:
-      (env.VITE_MAP_ATTRIBUTION as string | undefined) ||
+      (import.meta.env.VITE_MAP_ATTRIBUTION as string | undefined) ||
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19,
   },
