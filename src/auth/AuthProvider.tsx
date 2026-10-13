@@ -23,7 +23,9 @@ interface AuthValue {
   signUp(email: string, password: string, next: string): Promise<{ ok: boolean; session?: boolean; error?: string }>;
   sendMagicLink(email: string, next: string): Promise<{ ok: boolean; error?: string }>;
   resetPassword(email: string): Promise<{ ok: boolean; error?: string }>;
+
   updatePassword(password: string): Promise<{ ok: boolean; error?: string }>;
+  signInWithGoogle(next?: string): Promise<{ ok: boolean; error?: string }>;
   signOut(): Promise<void>;
 }
 
@@ -210,6 +212,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async updatePassword(password) {
         if (supabase) {
           const { error } = await supabase.auth.updateUser({ password });
+          if (error) {
+            return { ok: false, error: error.message };
+          }
+          return { ok: true };
+        }
+        return { ok: true };
+      },
+      async signInWithGoogle(next = '/contribute') {
+        if (supabase) {
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: callbackUrl(next),
+            },
+          });
           if (error) {
             return { ok: false, error: error.message };
           }
