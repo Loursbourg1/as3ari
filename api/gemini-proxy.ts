@@ -4,25 +4,24 @@ const KEY = process.env.Gemini ?? process.env.GEMINI_API_KEY ?? '';
 const BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const MAX_BODY = 32_000;
 
-// Cached across warm invocations — avoids a discovery call on every request.
-let activeModel: string | null = null;
+// Keep a known-current Flash model first so transient model-list failures do not
+// take the planner offline. The list response is used to verify availability.
+const PREFERRED_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
 
-/** Ask Google which models this key can actually use, pick the best flash/pro available. */
-async function resolveModel(): Promise<string | null> {
-  if (activeModel) return activeModel;
+/** List models enabled for this key and order them with current Flash models first. */
+async function resolveModels(): Promise<string[]> {
   const res = await fetch(`${BASE}/models?key=${encodeURIComponent(KEY)}&pageSize=100`);
-  if (!res.ok) return null;
+  if (!res.ok) return [];
   const body = (await res.json()) as { models?: { name: string; supportedGenerationMethods?: string[] }[] };
   const usable = (body.models ?? [])
     .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
     .map((m) => m.name.replace(/^models\//, ''));
-  // Prefer flash variants (cheaper + faster), then anything
-  activeModel =
-    usable.find((n) => n.includes('flash')) ??
-    usable.find((n) => n.includes('pro')) ??
-    usable[0] ??
-    null;
-  return activeModel;
+  return [
+    ...PREFERRED_MODELS.filter((model) => usable.includes(model)),
+    ...usable.filter((model) => model.includes('flash') && !PREFERRED_MODELS.includes(model)),
+    ...usable.filter((model) => model.includes('pro')),
+    ...usable.filter((model) => !model.includes('flash') && !model.includes('pro')),
+  ];
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -33,33 +32,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!raw || raw.length > MAX_BODY) return res.status(413).json({ error: 'payload_too_large' });
   if (!Array.isArray(req.body?.contents)) return res.status(400).json({ error: 'invalid_payload' });
 
-  const model = await resolveModel().catch(() => null);
-  if (!model) return res.status(503).json({ error: 'no_model_available' });
+  const listedModels = await resolveModels().catch(() => []);
+  // Try preferred models even when discovery fails (the key may still have
+  // access while Google's model-list endpoint is temporarily unavailable).
+  const models = [...new Set([...PREFERRED_MODELS, ...listedModels])];
+  let lastStatus = 503;
+  let lastDetail = 'No Gemini model could be reached';
 
-  const upstream = await fetch(`${BASE}/models/${model}:generateContent?key=${encodeURIComponent(KEY)}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: raw,
-  }).catch((err: unknown) => { throw new Error(String(err)); });
-
-  // If model suddenly gone, clear cache and retry once with fresh discovery
-  if (upstream.status === 404) {
-    activeModel = null;
-    const retry = await resolveModel().catch(() => null);
-    if (retry && retry !== model) {
-      const r2 = await fetch(`${BASE}/models/${retry}:generateContent?key=${encodeURIComponent(KEY)}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: raw,
+  for (const model of models) {
+    let upstream: Response;
+    try {
+      upstream = await fetch(`${BASE}/models/${model}:generateContent?key=${encodeURIComponent(KEY)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: raw,
       });
-      const t2 = await r2.text();
-      if (r2.ok) { res.setHeader('Content-Type', 'application/json'); return res.status(200).send(t2); }
-      return res.status(r2.status).json({ error: 'gemini_error', detail: t2.slice(0, 300) });
+    } catch (err: unknown) {
+      lastDetail = String(err).slice(0, 300);
+      continue;
     }
-    return res.status(503).json({ error: 'no_model_available' });
+
+    const text = await upstream.text();
+    if (upstream.ok) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(200).send(text);
+    }
+
+    lastStatus = upstream.status;
+    lastDetail = text.slice(0, 300);
+    // A model can exist but be unavailable to this key or temporarily busy.
+    // Try another candidate for model/availability/quota errors only.
+    if (![400, 403, 404, 429, 503].includes(upstream.status)) break;
   }
 
-  const text = await upstream.text();
-  if (!upstream.ok) return res.status(upstream.status).json({ error: 'gemini_error', detail: text.slice(0, 300) });
-
-  res.setHeader('Content-Type', 'application/json');
-  return res.status(200).send(text);
+  if (models.length === 0) return res.status(503).json({ error: 'no_model_available' });
+  return res.status(lastStatus).json({ error: 'gemini_error', detail: lastDetail });
 }
