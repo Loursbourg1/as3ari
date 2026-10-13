@@ -1,7 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const GEMINI_API_KEY = process.env.Gemini ?? process.env.GEMINI_API_KEY ?? '';
-const MODELS = ['gemini-1.5-flash', 'gemini-2.0-flash'];
+const MODELS = [
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-2.5-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-latest',
+  'gemini-1.5-pro',
+];
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const MAX_BODY_BYTES = 32_000;
 
@@ -16,6 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'invalid_payload' });
   }
 
+  let lastError = '';
   for (const model of MODELS) {
     let upstream: Response;
     try {
@@ -32,8 +40,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.setHeader('Content-Type', 'application/json');
       return res.status(200).send(text);
     }
+    lastError = `${model}: ${upstream.status} ${text.slice(0, 200)}`;
     if (upstream.status !== 404) return res.status(upstream.status).json({ error: 'gemini_error', detail: text });
   }
 
-  return res.status(502).json({ error: 'no_model_available' });
+  return res.status(502).json({ error: 'no_model_available', tried: MODELS, lastError });
 }
