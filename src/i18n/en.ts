@@ -233,6 +233,9 @@ export const en = {
   'auth.noAccount': 'New here? Create an account',
   'auth.magicLink': 'Email me a sign-in link instead',
   'auth.magicLinkSent': 'Check your email for a sign-in link.',
+  'auth.forgotPassword': 'Forgot password?',
+  'auth.resetSent': 'Check your email for password reset instructions.',
+
   'auth.signUpSent': 'Account created. Confirm your email using the link we sent, then come back.',
   'auth.passwordHint': 'At least 10 characters with upper-case, lower-case letters and digits.',
   'auth.failed': 'Sign-in failed. Check your email and password.',

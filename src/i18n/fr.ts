@@ -234,6 +234,9 @@ export const fr: Record<MessageKey, string> = {
   'auth.noAccount': 'Nouveau ? Créer un compte',
   'auth.magicLink': 'Recevoir plutôt un lien de connexion par e-mail',
   'auth.magicLinkSent': 'Consultez vos e-mails pour le lien de connexion.',
+  'auth.forgotPassword': 'Mot de passe oublié ?',
+  'auth.resetSent': 'Consultez vos e-mails pour réinitialiser votre mot de passe.',
+
   'auth.signUpSent': 'Compte créé. Confirmez votre e-mail avec le lien envoyé, puis revenez.',
   'auth.passwordHint': 'Au moins 10 caractères avec majuscules, minuscules et chiffres.',
   'auth.failed': 'Échec de la connexion. Vérifiez votre e-mail et votre mot de passe.',

@@ -61,6 +61,19 @@ export default function SignInPage() {
     setBusy(false);
   }
 
+  async function handleResetPassword() {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail.includes('@')) {
+      setMsg({ tone: 'warn', text: t('auth.email') });
+      return;
+    }
+    setBusy(true);
+    setMsg(null);
+    const res = await auth.resetPassword(cleanEmail);
+    setMsg(res.ok ? { tone: 'good', text: t('auth.resetSent') } : { tone: 'warn', text: res.error || t('common.error') });
+    setBusy(false);
+  }
+
   return (
     <PageContainer className="max-w-md">
       <h1 className="text-2xl font-bold">{t('auth.title')}</h1>
@@ -81,6 +94,18 @@ export default function SignInPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </Field>
+        {mode === 'signin' && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleResetPassword}
+              disabled={busy}
+              className="text-xs font-semibold text-brand-700 hover:underline"
+            >
+              {t('auth.forgotPassword')}
+            </button>
+          </div>
+        )}
         {msg && (
           <div role="status">
             <Notice tone={msg.tone}>{msg.text}</Notice>

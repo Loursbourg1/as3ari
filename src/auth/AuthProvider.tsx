@@ -22,6 +22,7 @@ interface AuthValue {
   signInWithPassword(email: string, password: string): Promise<{ ok: boolean; error?: string }>;
   signUp(email: string, password: string, next: string): Promise<{ ok: boolean; session?: boolean; error?: string }>;
   sendMagicLink(email: string, next: string): Promise<{ ok: boolean; error?: string }>;
+  resetPassword(email: string): Promise<{ ok: boolean; error?: string }>;
   signOut(): Promise<void>;
 }
 
@@ -187,6 +188,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } as SupabaseUser,
           access_token: 'local-test-token',
         } as Session);
+        return { ok: true };
+      },
+      async resetPassword(email) {
+        if (supabase) {
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/auth/callback?next=%2Fme`,
+          });
+          if (error) {
+            const msg = error.message.toLowerCase();
+            if (msg.includes('rate limit') || msg.includes('too many')) {
+              return { ok: false, error: 'Reset email rate limit reached. Please wait a few minutes before trying again.' };
+            }
+            return { ok: false, error: error.message };
+          }
+          return { ok: true };
+        }
         return { ok: true };
       },
       async signOut() {
