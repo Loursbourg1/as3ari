@@ -17,3 +17,4 @@ supabase/.branches
 .DS_Store
 *.log
 .shots
+examples_Deleteafterpublish/

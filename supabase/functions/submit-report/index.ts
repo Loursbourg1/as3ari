@@ -7,7 +7,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { priceReportInput, toReportErrorCode } from '../_shared/reportSchema.ts';
 
-const MAX_BODY_BYTES = 4096;
+const MAX_BODY_BYTES = 2_600_000;
 const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
   .split(',')
   .map((s) => s.trim())
@@ -42,6 +42,8 @@ const STATUS_FOR: Record<string, number> = {
   not_allowed: 403,
   duplicate_report: 409,
   rate_limited: 429,
+  captcha_required: 400,
+  captcha_failed: 400,
   server_error: 500,
 };
 
@@ -85,18 +87,68 @@ Deno.serve(async (req) => {
   if (!userData.user.email_confirmed_at) return json(403, { error: 'email_not_verified' }, origin);
 
   const v = parsed.data;
-  const { data, error } = await supabase.rpc('submit_price_report', {
-    p_product_id: v.product_id,
-    p_shop_id: v.shop_id,
-    p_price: v.price,
-    p_quantity: v.quantity,
-    p_unit: v.unit,
-    p_observed_on: v.observed_on,
-  });
+
+  // Google reCAPTCHA verification if secret key is configured on server
+  const recaptchaSecret = Deno.env.get('RECAPTCHA_SECRET_KEY');
+  if (recaptchaSecret) {
+    if (!v.recaptcha_token) {
+      return json(400, { error: 'captcha_required' }, origin);
+    }
+    try {
+      const verifyRes = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          secret: recaptchaSecret,
+          response: v.recaptcha_token,
+          remoteip: req.headers.get('x-forwarded-for') ?? '',
+        }),
+      });
+      const verifyData = (await verifyRes.json()) as { success?: boolean };
+      if (!verifyData.success) {
+        return json(400, { error: 'captcha_failed' }, origin);
+      }
+    } catch {
+      return json(500, { error: 'server_error' }, origin);
+    }
+  }
+
+  let data: unknown;
+  let error: { message?: string } | null = null;
+
+  if (v.location_label && !v.shop_id) {
+    const res = await supabase.rpc('submit_report_with_location', {
+      p_product_id: v.product_id,
+      p_price: v.price,
+      p_quantity: v.quantity,
+      p_unit: v.unit,
+      p_observed_on: v.observed_on,
+      p_location_label: v.location_label,
+      p_lat: v.lat ?? null,
+      p_lng: v.lng ?? null,
+      p_photo_url: v.photo_url ?? null,
+      p_is_anonymous: v.is_anonymous ?? true,
+      p_reporter_name: v.is_anonymous ? null : (v.reporter_name ?? null),
+    });
+    data = res.data;
+    error = res.error;
+  } else {
+    const res = await supabase.rpc('submit_price_report', {
+      p_product_id: v.product_id,
+      p_shop_id: v.shop_id,
+      p_price: v.price,
+      p_quantity: v.quantity,
+      p_unit: v.unit,
+      p_observed_on: v.observed_on,
+      p_is_anonymous: v.is_anonymous ?? true,
+      p_reporter_name: v.is_anonymous ? null : (v.reporter_name ?? null),
+    });
+    data = res.data;
+    error = res.error;
+  }
 
   if (error) {
     const code = toReportErrorCode(error.message);
-    if (code === 'server_error') console.error('submit_price_report failed', error.code); // no user data logged
     return json(STATUS_FOR[code] ?? 400, { error: code }, origin);
   }
   const row = Array.isArray(data) ? data[0] : data;

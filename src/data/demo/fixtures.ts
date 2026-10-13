@@ -11,6 +11,7 @@ import { roundMoney, Big } from '../../domain/money';
 import { addDays } from '../../domain/dates';
 import type { PriceObservation, Shop, ShopKind, UnitCode } from '../../domain/types';
 import { PRODUCTS } from '../reference/catalog';
+import { demoPhotoUrl } from './photos';
 
 const DEMO_CENTER = { lat: 34.6704, lng: 3.2503 };
 
@@ -117,8 +118,9 @@ export function demoObservationDefs(): DemoObservationDef[] {
 }
 
 export function demoObservations(today: string): PriceObservation[] {
-  return demoObservationDefs().map((d) => {
+  const rows = demoObservationDefs().map((d) => {
     const product = PRODUCTS.find((p) => p.id === d.product_id)!;
+    const shop = DEMO_SHOPS.find((s) => s.id === d.shop_id)!;
     const n = normalizeUnitPrice(d.price, d.quantity, d.unit, product.dimension);
     if (!n.ok) throw new Error(`Invalid demo fixture ${d.id}`);
     const observed = addDays(today, -d.days_ago);
@@ -133,9 +135,26 @@ export function demoObservations(today: string): PriceObservation[] {
       comparison_unit: n.unit,
       observed_on: observed,
       submitted_at: `${observed}T18:00:00.000Z`,
-      source: 'demo',
+      source: 'demo' as const,
       is_demo: true,
       corroborating_reports: 0,
+      photo_url: null as string | null,
+      lat: shop.lat,
+      lng: shop.lng,
+      location_label: shop.name.replace(/^Demo /, ''),
+      wilaya_code: shop.wilaya_code,
+      area_id: shop.area_id,
     };
+  });
+  const latest = [...rows].sort((a, b) =>
+    a.observed_on === b.observed_on ? b.submitted_at.localeCompare(a.submitted_at) : b.observed_on.localeCompare(a.observed_on),
+  );
+  const photoIds = new Set(latest.slice(0, 80).map((o) => o.id));
+  return rows.map((o) => {
+    const isRealPhotoProduct = ['potatoes', 'onions', 'tomatoes', 'garlic'].includes(o.product_id);
+    if (isRealPhotoProduct || photoIds.has(o.id)) {
+      return { ...o, photo_url: demoPhotoUrl(o.product_id, o.price) };
+    }
+    return o;
   });
 }

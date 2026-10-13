@@ -6,10 +6,12 @@ const env = import.meta.env;
 
 const supabaseUrl = (env.VITE_SUPABASE_URL as string | undefined)?.trim() || '';
 const supabaseAnonKey = (env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim() || '';
+const recaptchaSiteKey = (env.VITE_RECAPTCHA_SITE_KEY as string | undefined)?.trim() || '';
 
 export const config = {
   supabaseUrl,
   supabaseAnonKey,
+  recaptchaSiteKey,
   /** Without Supabase credentials the app runs on bundled, clearly-labelled synthetic data. */
   isDemoMode: !supabaseUrl || !supabaseAnonKey,
   showDemoData: (env.VITE_SHOW_DEMO_DATA ?? 'true') !== 'false',

@@ -1,13 +1,23 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { Session } from '@supabase/supabase-js';
+import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { readJson, writeJson } from '../platform/platform';
+
+interface LocalUser {
+  id: string;
+  email: string;
+  email_confirmed_at: string;
+}
+
+const LOCAL_AUTH_KEY = 'as3ari.local_auth_session';
 
 interface AuthValue {
-  /** False in demo mode (no backend configured). */
+  /** True when auth is available (always true now with local fallback). */
   available: boolean;
   loading: boolean;
   session: Session | null;
   email: string | null;
+  username: string | null;
   emailVerified: boolean;
   signInWithPassword(email: string, password: string): Promise<boolean>;
   signUp(email: string, password: string, next: string): Promise<boolean>;
@@ -23,51 +33,133 @@ function callbackUrl(next: string): string {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(Boolean(supabase));
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!supabase) return;
-    let active = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      setSession(data.session);
+    if (supabase) {
+      let active = true;
+      supabase.auth.getSession().then(({ data }) => {
+        if (!active) return;
+        setSession(data.session);
+        setLoading(false);
+      });
+      const { data } = supabase.auth.onAuthStateChange((_event, s) => {
+        setSession(s);
+        setLoading(false);
+      });
+      return () => {
+        active = false;
+        data.subscription.unsubscribe();
+      };
+    } else {
+      // Local fallback for offline / local-test mode
+      const saved = readJson<LocalUser | null>(LOCAL_AUTH_KEY, null);
+      if (saved) {
+        setSession({
+          user: {
+            id: saved.id,
+            email: saved.email,
+            email_confirmed_at: saved.email_confirmed_at,
+          } as SupabaseUser,
+          access_token: 'local-test-token',
+        } as Session);
+      }
       setLoading(false);
-    });
-    const { data } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-      setLoading(false);
-    });
-    return () => {
-      active = false;
-      data.subscription.unsubscribe();
-    };
+    }
   }, []);
 
   const value = useMemo<AuthValue>(() => {
     const user = session?.user ?? null;
+    const username =
+      (user?.user_metadata?.username as string | undefined) ||
+      (user?.email ? user.email.split('@')[0]?.replace(/[^a-zA-Z0-9_-]/g, '') : null) ||
+      null;
     return {
-      available: Boolean(supabase),
+      available: true,
       loading,
       session,
       email: user?.email ?? null,
+      username,
       emailVerified: Boolean(user?.email_confirmed_at),
       async signInWithPassword(email, password) {
-        if (!supabase) return false;
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        return !error;
+        if (supabase) {
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          return !error;
+        }
+        // Local authentication fallback
+        const localUser: LocalUser = {
+          id: 'usr_' + btoa(email).slice(0, 16),
+          email,
+          email_confirmed_at: new Date().toISOString(),
+        };
+        writeJson(LOCAL_AUTH_KEY, localUser);
+        setSession({
+          user: {
+            id: localUser.id,
+            email: localUser.email,
+            email_confirmed_at: localUser.email_confirmed_at,
+          } as SupabaseUser,
+          access_token: 'local-test-token',
+        } as Session);
+        return true;
       },
       async signUp(email, password, next) {
-        if (!supabase) return false;
-        const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: callbackUrl(next) } });
-        return !error;
+        if (supabase) {
+          const { error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { emailRedirectTo: callbackUrl(next) },
+          });
+          return !error;
+        }
+        // Local signup fallback (instantly verified for seamless local testing)
+        const localUser: LocalUser = {
+          id: 'usr_' + btoa(email).slice(0, 16),
+          email,
+          email_confirmed_at: new Date().toISOString(),
+        };
+        writeJson(LOCAL_AUTH_KEY, localUser);
+        setSession({
+          user: {
+            id: localUser.id,
+            email: localUser.email,
+            email_confirmed_at: localUser.email_confirmed_at,
+          } as SupabaseUser,
+          access_token: 'local-test-token',
+        } as Session);
+        return true;
       },
       async sendMagicLink(email, next) {
-        if (!supabase) return false;
-        const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: callbackUrl(next), shouldCreateUser: true } });
-        return !error;
+        if (supabase) {
+          const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: { emailRedirectTo: callbackUrl(next), shouldCreateUser: true },
+          });
+          return !error;
+        }
+        const localUser: LocalUser = {
+          id: 'usr_' + btoa(email).slice(0, 16),
+          email,
+          email_confirmed_at: new Date().toISOString(),
+        };
+        writeJson(LOCAL_AUTH_KEY, localUser);
+        setSession({
+          user: {
+            id: localUser.id,
+            email: localUser.email,
+            email_confirmed_at: localUser.email_confirmed_at,
+          } as SupabaseUser,
+          access_token: 'local-test-token',
+        } as Session);
+        return true;
       },
       async signOut() {
-        await supabase?.auth.signOut();
+        if (supabase) {
+          await supabase.auth.signOut();
+        } else {
+          writeJson(LOCAL_AUTH_KEY, null);
+          setSession(null);
+        }
       },
     };
   }, [session, loading]);

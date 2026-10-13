@@ -5,8 +5,11 @@ import { AppDataProvider } from './data/AppDataProvider';
 import { I18nProvider, useI18n } from './i18n/I18nProvider';
 import { AppShell } from './components/AppShell';
 import { PageContainer, Spinner } from './components/ui';
+import FeedPage from './pages/FeedPage';
 import ExplorePage from './pages/ExplorePage';
 
+const MapPage = lazy(() => import('./pages/MapPage'));
+const TrendsPage = lazy(() => import('./pages/TrendsPage'));
 const ProductPage = lazy(() => import('./pages/ProductPage'));
 const ShopPage = lazy(() => import('./pages/ShopPage'));
 const PlannerPage = lazy(() => import('./pages/PlannerPage'));
@@ -24,7 +27,7 @@ function NotFound() {
     <PageContainer>
       <p className="text-sm text-muted">404</p>
       <Link to="/" className="font-semibold text-brand-700">
-        {t('nav.explore')} →
+        {t('nav.feed')} →
       </Link>
     </PageContainer>
   );
@@ -39,8 +42,10 @@ export default function App() {
             <Suspense fallback={<Spinner />}>
               <Routes>
                 <Route element={<AppShell />}>
-                  <Route index element={<ExplorePage mode="explore" />} />
-                  <Route path="map" element={<ExplorePage mode="map" />} />
+                  <Route index element={<FeedPage />} />
+                  <Route path="map" element={<MapPage />} />
+                  <Route path="trends" element={<TrendsPage />} />
+                  <Route path="explore" element={<ExplorePage mode="explore" />} />
                   <Route path="product/:id" element={<ProductPage />} />
                   <Route path="shop/:id" element={<ShopPage />} />
                   <Route path="plan" element={<PlannerPage />} />

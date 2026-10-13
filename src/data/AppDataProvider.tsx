@@ -7,7 +7,7 @@ import type { LatLng } from '../domain/geo';
 import type { Catalog, Shop, Wilaya } from '../domain/types';
 import { readJson, writeJson } from '../platform/platform';
 import { PILOT_WILAYA_CODE } from './reference/geography';
-import { createDemoRepository, unavailableContributionApi } from './demoRepository';
+import { createDemoRepository } from './demoRepository';
 import { createSupabaseContributionApi, createSupabaseRepository } from './supabaseRepository';
 import type { AreaCoverage, ContributionApi, PriceRepository } from './repository';
 
@@ -28,10 +28,13 @@ interface AppData {
 
 const Ctx = createContext<AppData | null>(null);
 
+const defaultDemoBundle = createDemoRepository();
 const repo: PriceRepository = supabase
   ? createSupabaseRepository(supabase, { showDemoData: config.showDemoData })
-  : createDemoRepository();
-const contributions: ContributionApi = supabase ? createSupabaseContributionApi(supabase, { submitVia: config.submitVia }) : unavailableContributionApi;
+  : defaultDemoBundle;
+const contributions: ContributionApi = supabase
+  ? createSupabaseContributionApi(supabase, { submitVia: config.submitVia })
+  : defaultDemoBundle.contributions;
 
 export function AppDataProvider({ children, repository }: { children: ReactNode; repository?: PriceRepository }) {
   const r = repository ?? repo;

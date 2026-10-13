@@ -41,11 +41,14 @@ export function LocationSelector({ compact = false }: { compact?: boolean }) {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-label={`${t('location.label')}: ${wilaya ? name(wilaya) : wilayaCode}`}
-        className={cx('inline-flex min-w-0 items-center gap-1 rounded-md px-2 py-1.5 text-sm font-semibold text-ink hover:bg-canvas', compact && 'max-w-[9rem]')}
+        className={cx(
+          'inline-flex min-w-0 max-w-full items-center gap-1 rounded-xl px-2 py-1 sm:px-2.5 sm:py-1.5 text-xs sm:text-sm font-bold text-ink hover:bg-canvas border border-line/60 sm:border-transparent transition-colors',
+          compact ? 'max-w-[85px] xs:max-w-[125px] sm:max-w-[160px]' : 'max-w-full',
+        )}
       >
-        <MapPin className="size-4 shrink-0 text-brand-600" aria-hidden />
-        <span className="truncate">{wilaya ? name(wilaya) : '…'}</span>
-        <ChevronDown className="size-4 shrink-0 text-muted" aria-hidden />
+        <MapPin className="size-3.5 sm:size-4 shrink-0 text-brand-600" aria-hidden />
+        <span className="truncate min-w-0">{wilaya ? name(wilaya) : '…'}</span>
+        <ChevronDown className="size-3 sm:size-3.5 shrink-0 text-muted" aria-hidden />
       </button>
       {open && (
         <div className="fixed inset-0 z-[2000] flex items-end justify-center bg-ink/40 sm:items-center" onClick={close}>

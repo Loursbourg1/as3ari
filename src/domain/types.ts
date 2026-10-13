@@ -109,6 +109,16 @@ export interface PriceObservation {
   is_demo: boolean;
   /** Number of distinct other contributors whose approved reports agree. */
   corroborating_reports: number;
+  photo_url?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  location_label?: string | null;
+  wilaya_code?: number | null;
+  area_id?: string | null;
+  likes?: number;
+  dislikes?: number;
+  is_anonymous?: boolean;
+  reporter_name?: string | null;
 }
 
 export interface Catalog {

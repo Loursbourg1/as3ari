@@ -22,6 +22,17 @@ export interface AreaCoverage {
   lastObservedOn: string | null;
 }
 
+export interface FeedQuery {
+  wilayaCode?: number;
+  areaId?: string;
+  categoryId?: string;
+  productId?: string;
+  search?: string;
+  sort?: 'newest' | 'price';
+  limit: number;
+  offset: number;
+}
+
 /** Read-only public data. Implemented by the demo fixtures and by Supabase. */
 export interface PriceRepository {
   readonly mode: 'demo' | 'live';
@@ -29,6 +40,7 @@ export interface PriceRepository {
   listShops(wilayaCode: number): Promise<Shop[]>;
   getShop(id: string): Promise<Shop | null>;
   listObservations(q: ObservationQuery): Promise<Page<PriceObservation>>;
+  listFeed(q: FeedQuery): Promise<Page<PriceObservation>>;
   areaCoverage(wilayaCode: number): Promise<AreaCoverage>;
 }
 

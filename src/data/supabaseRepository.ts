@@ -56,7 +56,7 @@ function mapObservation(r: Record<string, unknown>): PriceObservation {
   return {
     id: String(r.id),
     product_id: String(r.product_id),
-    shop_id: String(r.shop_id),
+    shop_id: String(r.shop_id ?? ''),
     price: dec(r.price),
     quantity: dec(r.quantity),
     unit: r.unit as PriceObservation['unit'],
@@ -67,6 +67,13 @@ function mapObservation(r: Record<string, unknown>): PriceObservation {
     source: r.source as PriceObservation['source'],
     is_demo: Boolean(r.is_demo),
     corroborating_reports: Number(r.corroborating_reports ?? 0),
+    photo_url: (r.photo_url as string | null) ?? null,
+    lat: r.lat !== null && r.lat !== undefined ? Number(r.lat) : null,
+    lng: r.lng !== null && r.lng !== undefined ? Number(r.lng) : null,
+    location_label: (r.location_label as string | null) ?? (r.shop_name as string | null) ?? null,
+    wilaya_code: r.wilaya_code !== null && r.wilaya_code !== undefined ? Number(r.wilaya_code) : null,
+    is_anonymous: r.is_anonymous !== undefined ? Boolean(r.is_anonymous) : true,
+    reporter_name: (r.reporter_name as string | null) ?? null,
   };
 }
 
@@ -137,6 +144,26 @@ export function createSupabaseRepository(client: SupabaseClient, opts: { showDem
       return { items: (data ?? []).map(mapObservation), total: count ?? null, offset: qp.offset, limit: qp.limit };
     },
 
+    async listFeed(q): Promise<Page<PriceObservation>> {
+      let query = client.from('public_price_observations').select('*', { count: 'exact' });
+
+      if (q.wilayaCode !== undefined) query = query.eq('wilaya_code', q.wilayaCode);
+      if (q.areaId) query = query.eq('area_id', q.areaId);
+      if (q.productId) query = query.eq('product_id', q.productId);
+      if (!opts.showDemoData) query = query.eq('is_demo', false);
+
+      if (q.sort === 'price') {
+        query = query.order('normalized_price', { ascending: true });
+      } else {
+        query = query.order('observed_on', { ascending: false }).order('submitted_at', { ascending: false });
+      }
+
+      query = query.range(q.offset, q.offset + q.limit - 1);
+      const { data, error, count } = await query;
+      if (error) fail(error);
+      return { items: (data ?? []).map(mapObservation), total: count ?? null, offset: q.offset, limit: q.limit };
+    },
+
     async areaCoverage(wilayaCode): Promise<AreaCoverage> {
       const { data, error } = await client.rpc('area_coverage', { p_wilaya: wilayaCode });
       if (error) fail(error);
@@ -191,6 +218,24 @@ export function createSupabaseContributionApi(client: SupabaseClient, opts: { su
         }
         return data as { id: string; status: ReportStatus; normalized_price: string; comparison_unit: ComparisonUnit };
       }
+      if (!v.shop_id && v.location_label) {
+        const { data, error } = await client.rpc('submit_report_with_location', {
+          p_product_id: v.product_id,
+          p_price: v.price,
+          p_quantity: v.quantity,
+          p_unit: v.unit,
+          p_observed_on: v.observed_on,
+          p_location_label: v.location_label,
+          p_lat: v.lat ?? null,
+          p_lng: v.lng ?? null,
+          p_photo_url: v.photo_url ?? null,
+          p_is_anonymous: v.is_anonymous ?? true,
+          p_reporter_name: v.is_anonymous ? null : (v.reporter_name ?? null),
+        });
+        if (error) fail(error);
+        const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown>;
+        return { id: String(row.id), status: row.status as ReportStatus, normalized_price: dec(row.normalized_price), comparison_unit: row.comparison_unit as ComparisonUnit };
+      }
       const { data, error } = await client.rpc('submit_price_report', {
         p_product_id: v.product_id,
         p_shop_id: v.shop_id,
@@ -198,6 +243,8 @@ export function createSupabaseContributionApi(client: SupabaseClient, opts: { su
         p_quantity: v.quantity,
         p_unit: v.unit,
         p_observed_on: v.observed_on,
+        p_is_anonymous: v.is_anonymous ?? true,
+        p_reporter_name: v.is_anonymous ? null : (v.reporter_name ?? null),
       });
       if (error) fail(error);
       const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown>;

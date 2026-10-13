@@ -118,7 +118,7 @@ const inputCls =
   'h-10 w-full rounded-md border border-line-strong bg-surface px-3 text-[15px] text-ink placeholder:text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20';
 
 /** Class groups where a caller-provided class must replace the base class (no tailwind-merge dependency). */
-const GROUPS = [/^w-/, /^h-/, /^px-/, /^text-(xs|sm|base|lg|xl|\[\d)/];
+const GROUPS = [/^w-/, /^max-w-/, /^min-w-/, /^h-/, /^px-/, /^py-/, /^ps-/, /^pe-/, /^p-/, /^text-(xs|sm|base|lg|xl|\[\d)/];
 
 export function withOverrides(base: string, extra?: string): string {
   if (!extra) return base;
