@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { useAppData } from '../data/AppDataProvider';
+import { config } from '../config/env';
 import { ApiError, type SubmitResult } from '../data/repository';
 import { addDays } from '../domain/dates';
 import { formatDZD, parseMoney, parseQuantity } from '../domain/money';
@@ -255,7 +256,7 @@ export default function ContributePage() {
         <p className="mt-1 text-sm text-ink-2">{t('contribute.intro')}</p>
       </div>
 
-      {!auth.emailVerified && (
+      {config.requireEmailVerification && !auth.emailVerified && (
         <div className="mb-4">
           <Notice tone="warn">{t('contribute.verifyEmail')}</Notice>
         </div>
@@ -327,7 +328,7 @@ export default function ContributePage() {
             2. {t('contribute.price')} <span className="text-danger">*</span>
           </label>
           <Field label={t('contribute.price')} htmlFor="price" error={fieldErrors.price}>
-            <div className="relative">
+            <div className="relative flex items-center">
               <TextInput
                 id="price"
                 inputMode="decimal"
@@ -335,10 +336,15 @@ export default function ContributePage() {
                 placeholder="180"
                 value={price}
                 onChange={(e) => setPrice(e.target.value.slice(0, 12))}
-                className="num text-xl font-black pe-14 rounded-xl"
+                dir="ltr"
+                className={`text-xl font-black rounded-xl text-left ${locale === 'ar' ? 'ps-14 pe-3' : 'pe-14 ps-3'}`}
               />
-              <span className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 font-bold text-sm text-muted">
-                DZD
+              <span
+                className={`pointer-events-none absolute font-bold text-sm text-muted ${
+                  locale === 'ar' ? 'start-3' : 'end-3'
+                }`}
+              >
+                {t('common.currency')}
               </span>
             </div>
           </Field>
@@ -622,7 +628,7 @@ export default function ContributePage() {
           type="submit"
           variant="primary"
           className="w-full py-3 rounded-xl text-base font-bold shadow-md"
-          disabled={busy || !auth.emailVerified}
+          disabled={busy || (config.requireEmailVerification && !auth.emailVerified)}
         >
           {busy ? t('contribute.submitting') : t('contribute.submit')}
         </Button>

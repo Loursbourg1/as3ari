@@ -84,7 +84,11 @@ Deno.serve(async (req) => {
 
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) return json(401, { error: 'not_authenticated' }, origin);
-  if (!userData.user.email_confirmed_at) return json(403, { error: 'email_not_verified' }, origin);
+
+  const requireEmail = (Deno.env.get('REQUIRE_EMAIL_VERIFICATION') ?? 'false') === 'true';
+  if (requireEmail && !userData.user.email_confirmed_at) {
+    return json(403, { error: 'email_not_verified' }, origin);
+  }
 
   const v = parsed.data;
 

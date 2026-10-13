@@ -24,6 +24,7 @@ export const en = {
   'common.loadMore': 'Load more',
   'common.demo': 'Demo',
   'common.demoData': 'Demo data',
+  'common.currency': 'DZD',
   'common.perUnit.kg': '/kg',
   'common.perUnit.l': '/L',
   'common.perUnit.piece': '/item',

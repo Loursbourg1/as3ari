@@ -9,6 +9,7 @@ export default defineConfig({
     host: true,
     port: 5173,
   },
+  envPrefix: ['VITE_', 'RECAPTCHA_', 'DEMO_', 'SUPABASE_'],
   build: { sourcemap: false, chunkSizeWarningLimit: 900 },
   test: {
     projects: [

@@ -25,6 +25,7 @@ export const fr: Record<MessageKey, string> = {
   'common.loadMore': 'Afficher plus',
   'common.demo': 'Démo',
   'common.demoData': 'Données de démonstration',
+  'common.currency': 'DZD',
   'common.perUnit.kg': '/kg',
   'common.perUnit.l': '/L',
   'common.perUnit.piece': '/unité',

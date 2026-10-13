@@ -25,6 +25,7 @@ export const ar: Record<MessageKey, string> = {
   'common.loadMore': 'عرض المزيد',
   'common.demo': 'تجريبي',
   'common.demoData': 'بيانات تجريبية',
+  'common.currency': 'دج',
   'common.perUnit.kg': '/كغ',
   'common.perUnit.l': '/لتر',
   'common.perUnit.piece': '/حبة',
