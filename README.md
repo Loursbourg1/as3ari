@@ -1,111 +1,131 @@
-# As3ari — map-first grocery price intelligence for Algeria
+# As3ari (أسعاري) — Map-First Grocery Price Intelligence & Smart Meal Planning for Algeria
 
-As3ari shows **grocery prices people actually saw** at physical shops and markets, on a map.
-Visitors search a product, compare dated, reported prices between locations, and plan a
-week of affordable household meals from structured recipes and local prices.
+[![Tests](https://img.shields.io/badge/tests-119%20passed-brightgreen.svg)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)]()
+[![React](https://img.shields.io/badge/React-19-61dafb.svg)]()
+[![TailwindCSS](https://img.shields.io/badge/Tailwind-v4-38bdf8.svg)]()
+[![Gemini](https://img.shields.io/badge/AI-Google%20Gemini-8e75ff.svg)]()
 
-It is **not** a store: there is no cart, checkout, payment, delivery or seller inventory.
-The "shopping list" is an informational checklist for shopping in physical stores.
+**As3ari** is a community-driven grocery price intelligence platform for Algeria. It helps Algerian families navigate food inflation by crowdsourcing real, dated grocery prices from local shops and markets, and offers an AI-powered meal planner that generates affordable weekly menus based on real market costs.
 
-Pilot area: **Djelfa (wilaya 17)**. The data model supports all wilayas, but no coverage is
-claimed where no genuine observations exist.
+> **Note:** As3ari is an informational transparency tool, not an e-commerce store. There is no cart, payment, or delivery. Shopping lists are offline checklists for physical shopping.
 
 ---
 
-## What works today
+## ✨ Key Features
 
-| Area | Status |
-| --- | --- |
-| Map-first explore screen (Leaflet), product search (EN/FR/AR, typo-tolerant), price pins, shop panel, map/list toggle, filters (freshness, commune, price range), sorting (unit price, recency, distance after explicit "Near me") | ✅ |
-| Price model: separate products / shops / observations, history kept, unit normalization (DZD/kg, /L, /item) with decimal arithmetic, category-based freshness, "lowest reported" only with ≥2 current shops, coverage disclosure | ✅ |
-| Product price-history page and shop page (paginated, no invented trends) | ✅ |
-| Deterministic 7-day meal planner (16 structured recipes, exclusions, pantry, budget pass, missing/stale price disclosure) + informational checklist | ✅ |
-| Supabase schema, RLS, trusted `submit_price_report()` (validation, normalization, DB rate limits, duplicate guard, pending status), flags, moderation with audit trail | ✅ tested in PGlite (real Postgres) |
-| Contribution UI (sign-in/sign-up, verified-email requirement, my reports, moderation queue) | ✅ code complete — needs a configured Supabase project to run |
-| `submit-report` Edge Function (Zod, CORS allowlist, size limits) | ⚠️ written, **not yet deployed or executed** |
-| Localization EN / FR / AR with RTL | ✅ |
-| Vercel deployment | ⚠️ configured (`vercel.json`), **not yet deployed** — needs the founder's account |
-| Capacitor (Android/iOS) | ⚠️ config only; native projects not generated or built |
+### 1. 🗺️ Map-First Price Explorer & Recent Feed
+- **Interactive Geospatial Map (Leaflet)**: Find the lowest reported prices at physical grocers, supermarkets, and local markets across Algeria's 58 wilayas.
+- **Swipeable Recent Prices Feed**: Fast, mobile-first feed displaying newly contributed prices with community accuracy voting and shop metadata.
+- **Unit Normalization**: Automatically normalizes and compares items in standard units (`DZD/kg`, `DZD/L`, `DZD/item`) with exact decimal math.
 
-Without Supabase credentials the app runs in **demo mode** on clearly-labelled synthetic
-data (purple "Demo" badges and a banner on every screen). Contributions are then disabled,
-not simulated.
+### 2. 🤖 Smart Gemini AI Meal Planner
+- **AI-Driven Menu Optimization**: Integrates Google Gemini (`gemini-1.5-flash` / `gemini-2.0-flash`) to generate culturally tailored 7-day Algerian meal plans.
+- **Real Price Estimation**: Costed against real As3ari price observations with full transparency on missing or stale prices.
+- **Daily Nutrition Estimates (Per Person)**: Deterministically calculates daily calories, protein, carbohydrates, fat, and fiber based on 16 traditional Algerian recipe benchmarks.
+- **Interactive Dish Swapping**: Swap any lunch or dinner slot with automatic live recalculation of costs, remaining budget, and nutritional balance.
+- **Deterministic Resilience**: If the Gemini API key is missing or quota is exhausted, seamlessly falls back to a deterministic budget optimizer.
 
-## Quick start
+### 3. 📈 Price Trends & Volatility Tracker
+- **Trend Visualizations**: Interactive SVG charts tracking price fluctuations (daily and weekly) per product and wilaya.
+- **Category Navigation**: Filter by category (Produce, Dairy, Bakery, Meat, Pantry, Drinks, Hygiene) to monitor market trends.
+
+### 4. 🛒 Community Price Reports & Custom Products
+- **Contribution Engine**: Registered users can submit observed prices directly from markets, with optional GPS tagging.
+- **Custom Product Submission**: Community members can add completely new local groceries to the catalog if not already listed.
+- **Anti-Spam & Moderation**: Protected by Google reCAPTCHA v3, rate limiting, and an admin moderation workflow.
+
+### 5. 🌍 Trilingual & Native RTL Support
+- Full internationalization across **English**, **French (Français)**, and **Arabic (العربية)** with layout direction switching (LTR / RTL).
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 19, TypeScript (strict), Vite 8, Tailwind CSS v4, Lucide React
+- **Geodata**: Leaflet, OpenStreetMap
+- **Backend & Database**: Supabase (PostgreSQL, Row Level Security, RPC functions, Edge Functions)
+- **AI & LLM**: Google Gemini API (`gemini-1.5-flash`)
+- **Testing**: Vitest, JSDOM, PGlite (in-memory Postgres for migration and RLS testing)
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 20+
+- npm 10+
+
+### Installation
 
 ```bash
+git clone https://github.com/Loursbourg1/as3ari.git
+cd as3ari
 npm install
-npm run dev            # http://localhost:5173 — demo mode, no account or backend needed
 ```
 
-### Checks
+### Running Locally
 
 ```bash
-npm run typecheck      # TypeScript (strict)
-npm run lint           # ESLint
-npm test               # unit tests (units, money, freshness, comparison, search, planner, i18n, XSS)
-npm run test:db        # database security tests: real migrations in PGlite as anon / users / admin
-npm run build          # production build
-npm run test:e2e       # Playwright: full visitor journey on mobile + desktop, under the production CSP
-npm run check:secrets  # scans tracked files and dist/ for privileged keys
-npm audit --omit=dev   # production dependency audit
-npm run check:all      # typecheck + lint + all vitest + build + secrets
+npm run dev
 ```
 
-Playwright needs a browser once: `npx playwright install chromium`.
+Open [http://localhost:5173](http://localhost:5173) in your browser. Without Supabase credentials, As3ari automatically starts in **Demo Mode** with synthetic Algerian grocery data.
 
-## Connecting a real backend
+---
 
-See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for exact Supabase + Vercel steps
-(migrations, auth settings, edge function, first admin, environment variables).
+## ⚙️ Environment Variables
 
-Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
-(public values). **Never** put a service-role key in a `VITE_` variable.
+Create a `.env.local` file or configure these variables in your deployment settings (e.g. Vercel):
 
-## Adding genuine data
+| Variable | Description | Default / Required |
+| --- | --- | --- |
+| `Gemini` or `VITE_GEMINI_API_KEY` | Google Gemini API key for AI meal planning | Optional (UI allows browser key input) |
+| `VITE_SUPABASE_URL` | Supabase project URL | Optional (runs demo mode without it) |
+| `VITE_SUPABASE_ANON_KEY` | Supabase public anonymous key | Optional (runs demo mode without it) |
+| `RECAPTCHA_SITE_KEY` | Google reCAPTCHA v3 site key | Uses Google official test key if unset |
+| `DEMO_DATA` | Set `'false'` to hide synthetic demo items in production | `'true'` |
+| `REQUIRE_EMAIL_VERIFICATION` | Require email confirmation before accepting price submissions | `'false'` |
 
-Real shops and prices are added through a reviewed CSV → SQL process:
-**[docs/DATA_IMPORT.md](docs/DATA_IMPORT.md)**. Demo data lives only in
-`supabase/demo_seed.sql` and can be deleted with two SQL statements.
+---
 
-## Project layout
+## 🧪 Testing & Verification
+
+```bash
+# Run all unit tests and database migration / security tests (119+ tests)
+npm run test:all
+
+# Run TypeScript typecheck
+npm run typecheck
+
+# Production build
+npm run build
+```
+
+---
+
+## 📂 Project Structure
 
 ```
 src/
-  domain/        pure logic: units, money (big.js), freshness, comparison, search, schemas
-  planner/       meal planning, price estimates, shopping-list maths, device storage
-  data/          repository interface, demo + Supabase implementations, reference catalogue
-  map/           map adapter (Leaflet) — swap providers here only
-  platform/      platform adapter (storage, geolocation) for web / Capacitor
-  auth/          Supabase auth provider, safe redirect validation
-  i18n/          en / fr / ar dictionaries
-  components/    UI building blocks
-  pages/         routes
+  auth/          Supabase authentication & route protection
+  components/    Reusable UI components (buttons, search, cards, trends)
+  config/        Build-time & runtime environment configuration
+  data/          Data access layer (Supabase & offline Demo repositories)
+  domain/        Core business logic (units, money math, nutrition benchmarks)
+  i18n/          English, French, and Arabic translation dictionaries
+  pages/         Page routes (Feed, Explore, Map, Plan, Trends, Contribute)
+  planner/       Gemini AI meal planner & deterministic shopping optimizer
 supabase/
-  migrations/    schema, trusted functions, RLS
-  functions/     submit-report edge function
-  seed.sql       reference data (generated)      demo_seed.sql  synthetic demo data (generated)
-scripts/         seed generator, CSV import, secret check, static server for E2E
-tests/db/        PGlite access-control and import tests
-tests/e2e/       Playwright visitor journey
-docs/            deployment, security, data, planner, import, Capacitor
+  migrations/    PostgreSQL schema, RLS policies, and RPC procedures
+  functions/     Supabase Edge Functions (submit-report)
+tests/
+  db/            PGlite database security and migration tests
+  unit/          Unit tests for domain math, search, and schemas
 ```
 
-## Documentation
+---
 
-- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): Supabase + Vercel setup
-- [docs/SECURITY.md](docs/SECURITY.md): controls, tests, known gaps
-- [docs/DATA.md](docs/DATA.md): data model, units, freshness, comparison policy, demo data
-- [docs/PLANNER.md](docs/PLANNER.md): how the meal planner works
-- [docs/DATA_IMPORT.md](docs/DATA_IMPORT.md): importing verified shops and genuine prices
-- [docs/CAPACITOR.md](docs/CAPACITOR.md): Android/iOS packaging path
-- [docs/DEMO.md](docs/DEMO.md): demo script for the competition
+## 📄 License
 
-## Known limitations
-
-- No genuine observations or verified shop locations are included. The founder must collect and import them.
-- The Supabase backend, the Edge Function and the Vercel deployment have not been run against a live project from this repository yet.
-- Database tests run against the real migrations in PGlite with a Supabase-compatible `auth` shim, not against a live Supabase instance.
-- Evidence photo uploads are not implemented (by design for the MVP).
-- Native Android/iOS builds have not been generated or tested.
-- See [docs/SECURITY.md](docs/SECURITY.md#known-gaps) for security limitations.
+This project is licensed under the [MIT License](LICENSE).

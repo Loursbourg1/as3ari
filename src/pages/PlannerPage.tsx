@@ -20,7 +20,7 @@ import type { Catalog, DietTag, MealSlot, UnitCode } from '../domain/types';
 import { estimateIngredientPrices, type IngredientPrice } from '../planner/prices';
 import { loadForm, saveForm, savePlan, type PlannerForm } from '../planner/storage';
 import { generateSmartMealPlan, recalculatePlan, type AiMealPlanResult } from '../planner/aiPlanner';
-import { config } from '../config/env';
+import { config, getGeminiApiKey, setLocalGeminiKey } from '../config/env';
 import { useI18n } from '../i18n/I18nProvider';
 import { Badge, Button, ErrorState, Field, Notice, PageContainer, Select, Spinner, TextInput, cx } from '../components/ui';
 
@@ -37,6 +37,9 @@ export default function PlannerPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [openMeal, setOpenMeal] = useState<string | null>(null);
   const [replacingSlot, setReplacingSlot] = useState<{ day: number; slot: MealSlot } | null>(null);
+  const [apiKeyInput, setApiKeyInput] = useState(() => getGeminiApiKey());
+  const [showKeyConfig, setShowKeyConfig] = useState(false);
+  const [keySaved, setKeySaved] = useState(false);
 
   const cat = catalog.data;
   if (!cat) return catalog.status === 'error' ? <ErrorState onRetry={catalog.reload} /> : <Spinner />;
@@ -67,6 +70,8 @@ export default function PlannerPage() {
         return q && ing && unitsForDimension(ing.dimension).includes(p.unit) ? [{ ...p, quantity: q }] : [];
       });
 
+      const currentKey = getGeminiApiKey();
+
       const r = await generateSmartMealPlan({
         householdSize: size,
         budget,
@@ -78,7 +83,7 @@ export default function PlannerPage() {
         wilayaCode,
         catalog: cat!,
         prices,
-        apiKey: config.geminiApiKey,
+        apiKey: currentKey,
       });
 
       setResult(r);
@@ -128,18 +133,77 @@ export default function PlannerPage() {
 
   return (
     <PageContainer>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-ink">{t('plan.title')}</h1>
           <p className="mt-1 text-sm text-ink-2">{t('plan.intro')}</p>
         </div>
-        {config.hasGeminiAi && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-500/30 bg-brand-50/80 px-3 py-1 text-xs font-bold text-brand-700">
-            <Sparkles className="size-3.5 text-brand-600 animate-pulse" />
-            Gemini AI Active
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {config.hasGeminiAi ? (
+            <button
+              type="button"
+              onClick={() => setShowKeyConfig((s) => !s)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand-500/30 bg-brand-50/90 px-3 py-1 text-xs font-bold text-brand-700 hover:bg-brand-100 transition-colors"
+            >
+              <Sparkles className="size-3.5 text-brand-600 animate-pulse" />
+              {t('plan.geminiActive')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowKeyConfig((s) => !s)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-xs font-semibold text-ink-2 hover:bg-canvas transition-colors shadow-xs"
+            >
+              <Sparkles className="size-3.5 text-muted" />
+              {t('plan.geminiEnterKey')}
+            </button>
+          )}
+        </div>
       </div>
+
+      {showKeyConfig && (
+        <div className="mt-3 rounded-2xl border border-brand-200 bg-brand-50/60 p-4 space-y-3 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-ink flex items-center gap-1.5">
+              <Sparkles className="size-4 text-brand-600" />
+              {t('plan.geminiEnterKey')}
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowKeyConfig(false)}
+              className="text-muted hover:text-ink text-xs font-bold"
+            >
+              ✕
+            </button>
+          </div>
+          <p className="text-xs text-ink-2">{t('plan.geminiKeyHint')}</p>
+          <div className="flex gap-2">
+            <TextInput
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              placeholder={t('plan.geminiKeyPlaceholder')}
+              className="text-xs font-mono"
+            />
+            <Button
+              variant="primary"
+              onClick={() => {
+                setLocalGeminiKey(apiKeyInput);
+                setKeySaved(true);
+                setTimeout(() => setKeySaved(false), 3000);
+              }}
+              className="shrink-0 text-xs"
+            >
+              {t('plan.geminiSaveKey')}
+            </Button>
+          </div>
+          {keySaved && (
+            <p className="text-xs font-bold text-good flex items-center gap-1">
+              <CheckCircle2 className="size-3.5" />
+              {t('plan.geminiKeySaved')}
+            </p>
+          )}
+        </div>
+      )}
 
       <form
         className="mt-4 space-y-4 rounded-2xl border border-line bg-surface p-4 shadow-card"
@@ -419,9 +483,22 @@ function PlanResult({
 
   return (
     <section className="mt-6 space-y-4" aria-label={t('plan.result')} data-testid="plan-result">
+      {/* AI Error Notice Banner if Gemini reported an issue */}
+      {result.aiError && (
+        <div className="rounded-2xl border border-danger/30 bg-danger-bg p-4 space-y-1 shadow-xs">
+          <div className="flex items-center gap-2 text-xs font-bold text-danger">
+            <AlertTriangle className="size-4" />
+            <span>{t('plan.geminiNotice')}</span>
+          </div>
+          <p className="text-xs text-danger font-medium leading-relaxed">
+            {result.aiError}
+          </p>
+        </div>
+      )}
+
       {/* AI Header & Explanation Banner */}
       {result.isAiGenerated && (
-        <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4 space-y-1.5">
+        <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4 space-y-1.5 shadow-xs">
           <div className="flex items-center gap-2 text-xs font-bold text-brand-800">
             <Sparkles className="size-4 text-brand-600" />
             <span>{t('plan.smartAi')}</span>
@@ -533,6 +610,7 @@ function PlanResult({
             <span className="num text-xl font-black text-ink">{result.nutrition.dailyAveragePerServing.fiber}g</span>
           </div>
         </div>
+        <p className="mt-2.5 text-center text-[11px] text-muted font-medium">{t('plan.nutritionNote')}</p>
       </div>
 
       {/* 7-Day Planned Meals Calendar */}

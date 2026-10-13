@@ -40,6 +40,7 @@ export type AiGeneratedPlan = z.infer<typeof aiGeneratedPlanSchema>;
 export interface AiMealPlanResult extends MealPlanResult {
   isAiGenerated: boolean;
   aiExplanation?: string;
+  aiError?: string;
   nutrition: WeeklyNutritionSummary;
   budgetRemaining: string | null;
   budgetUsedPercent: number | null;
@@ -242,23 +243,39 @@ AVAILABLE RECIPES:
 ${recipeManifest}`;
 
   try {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 1024,
-          responseMimeType: 'application/json',
-        },
-      }),
+    const payload = JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+      generationConfig: {
+        temperature: 0.4,
+        maxOutputTokens: 1024,
+        responseMimeType: 'application/json',
+      },
     });
 
+    let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey.trim())}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+    });
+
+    if (!res.ok && res.status === 404) {
+      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey.trim())}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+      });
+    }
+
     if (!res.ok) {
-      // If quota exceeded or error, fall back gracefully
-      throw new Error(`Gemini API error: ${res.status}`);
+      const errText = await res.text().catch(() => '');
+      let errorDetail = `HTTP ${res.status}`;
+      try {
+        const errJson = JSON.parse(errText);
+        errorDetail = errJson.error?.message || errorDetail;
+      } catch {
+        errorDetail = errText || errorDetail;
+      }
+      throw new Error(`Gemini API: ${errorDetail}`);
     }
 
     const data = await res.json();
@@ -308,7 +325,8 @@ ${recipeManifest}`;
       explanation || 'Plan optimisé par Gemini AI selon vos prix locaux et vos ingrédients.',
       true,
     );
-  } catch {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
     // Deterministic fallback planner if Gemini fails or quota exhausted
     const fallback = generateMealPlan(
       { householdSize, budget, pantry, excludedTags, excludedIngredients, preferredIngredients },
@@ -327,7 +345,8 @@ ${recipeManifest}`;
     return {
       ...fallback,
       isAiGenerated: false,
-      aiExplanation: 'Mode de secours déterministe (quota IA indisponible). Calculé au plus bas coût.',
+      aiExplanation: 'Mode de secours déterministe (quota ou indisponibilité IA). Calculé au plus bas coût.',
+      aiError: errorMsg,
       nutrition,
       budgetRemaining,
       budgetUsedPercent,
