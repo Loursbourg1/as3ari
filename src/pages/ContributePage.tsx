@@ -145,7 +145,8 @@ export default function ContributePage() {
     setPhotoProcessing(true);
     setError(null);
     try {
-      const dataUrl = await compressImageFile(file, 1024, 0.75);
+      const dataUrl = await compressImageFile(file, 800, 0.60);
+
       setPhotoDataUrl(dataUrl);
     } catch {
       setError(t('errors.missing_photo'));

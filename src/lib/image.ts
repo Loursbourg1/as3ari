@@ -1,5 +1,6 @@
-/** Resize and JPEG-compress a contributor photo so it can be stored locally or uploaded. */
-export function compressImageFile(file: File, maxEdge = 1280, quality = 0.72): Promise<string> {
+/** Resize and JPEG-compress a contributor photo. Targets ~50–80 KB per image. */
+export function compressImageFile(file: File, maxEdge = 800, quality = 0.60): Promise<string> {
+
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith('image/')) {
       reject(new Error('missing_photo'));
