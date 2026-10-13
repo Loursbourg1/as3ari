@@ -416,8 +416,9 @@ enabled = true
 
 [functions.submit-report]
 enabled = true
-# The gateway rejects requests without a valid user JWT before the function runs.
-verify_jwt = true
+# Browser CORS preflight requests never include a JWT. The function validates the
+# caller's bearer token itself before accepting a POST.
+verify_jwt = false
 
 [functions.gemini-proxy]
 enabled = true

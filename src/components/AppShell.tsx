@@ -106,17 +106,18 @@ function SidebarDrawer({
           </button>
         </div>
 
-        {/* Location selector strip inside drawer */}
-        <div className="border-b border-line bg-canvas/60 px-4 py-2.5">
+        {/* The mobile header already includes the location selector. */}
+        <div className="hidden border-b border-line bg-canvas/60 px-4 py-2.5 lg:block">
           <p className="text-[11px] font-semibold text-muted mb-1">
             {t('location.search')}
           </p>
           <LocationSelector compact />
         </div>
 
-        {/* Main Nav Items */}
+        {/* Desktop navigation. Mobile uses the bottom navigation instead. */}
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
-          {NAV.map(({ to, key, icon: Icon, end }) => (
+          <div className="hidden space-y-1 lg:block">
+            {NAV.map(({ to, key, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -134,10 +135,9 @@ function SidebarDrawer({
               <Icon className="size-5 shrink-0" aria-hidden />
               <span>{t(key)}</span>
             </NavLink>
-          ))}
+            ))}
 
-          {/* Prominent contribute button inside drawer as well */}
-          <div className="pt-2">
+            <div className="pt-2">
             <Link
               to="/contribute"
               onClick={onClose}
@@ -146,7 +146,24 @@ function SidebarDrawer({
               <PlusCircle className="size-5 shrink-0" aria-hidden />
               <span>{t('nav.report')}</span>
             </Link>
+            </div>
           </div>
+
+          {auth.session && (
+            <NavLink
+              to="/me"
+              onClick={onClose}
+              className={({ isActive }) =>
+                cx(
+                  'flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors lg:hidden',
+                  isActive ? 'bg-brand-50 text-brand-700 font-bold' : 'text-ink-2 hover:bg-canvas hover:text-ink',
+                )
+              }
+            >
+              <User className="size-5 shrink-0" aria-hidden />
+              <span>{t('nav.myReports')}</span>
+            </NavLink>
+          )}
 
           <div className="my-3 border-t border-line" />
 
@@ -157,7 +174,7 @@ function SidebarDrawer({
               onClick={onClose}
               className={({ isActive }) =>
                 cx(
-                  'flex items-center gap-3 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors',
+                  'hidden items-center gap-3 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors lg:flex',
                   isActive ? 'text-brand-700 font-bold' : 'text-muted hover:bg-canvas hover:text-ink',
                 )
               }

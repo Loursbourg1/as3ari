@@ -130,6 +130,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             return { ok: false, error: error.message };
           }
+          // Supabase returns an empty identities list for an already registered
+          // account. Do not leave the person waiting for another confirmation email.
+          if (data?.user?.identities && data.user.identities.length === 0) {
+            return { ok: false, error: 'An account already exists for this email — sign in or reset your password.' };
+          }
           // If Supabase has email confirmation disabled, session is returned immediately
           if (data?.session) {
             setSession(data.session);

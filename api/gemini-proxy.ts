@@ -47,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         headers: { 'Content-Type': 'application/json' },
         body: raw,
       });
-    } catch (err: unknown) {
+    } catch {
       lastDetail = 'Gemini is temporarily unavailable';
       continue;
     }

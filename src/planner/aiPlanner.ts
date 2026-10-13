@@ -265,7 +265,6 @@ ${recipeManifest}`;
 
   try {
     // Same-origin Vercel serverless function — no CORS, API key stays server-side.
-    let data: unknown;
     const proxyRes = await fetch('/api/gemini-proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -278,7 +277,7 @@ ${recipeManifest}`;
       const detail = await proxyRes.text().catch(() => '');
       throw new Error(`Gemini proxy: HTTP ${proxyRes.status} ${detail}`);
     }
-    data = await proxyRes.json();
+    const data: unknown = await proxyRes.json();
 
     const response = data as {
       candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
@@ -333,7 +332,7 @@ ${recipeManifest}`;
       explanation || 'Plan optimisé par Gemini AI selon vos prix locaux et vos ingrédients.',
       true,
     );
-  } catch (err: unknown) {
+  } catch {
     // Do not display upstream response bodies or implementation details to users.
     const errorMsg = 'Gemini is temporarily unavailable. The standard budget plan was used instead.';
     // Deterministic fallback planner if Gemini fails or quota exhausted

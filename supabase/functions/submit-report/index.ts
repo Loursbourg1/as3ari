@@ -8,7 +8,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { priceReportInput, toReportErrorCode } from '../_shared/reportSchema.ts';
 
 const MAX_BODY_BYTES = 2_600_000;
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? 'https://as3ari.vercel.app')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
