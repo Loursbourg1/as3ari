@@ -6,9 +6,8 @@ export class ErrorBoundary extends Component<{ fallback: ReactNode; children: Re
   static getDerivedStateFromError() {
     return { failed: true };
   }
-  componentDidCatch(error: unknown) {
-    // Log locally only; never send user data to third-party error services.
-    console.error('[as3ari] render error', error instanceof Error ? error.message : error);
+  componentDidCatch(_error: unknown, _info: unknown) {
+    // Error is captured by getDerivedStateFromError above; no logging needed.
   }
   render() {
     return this.state.failed ? this.props.fallback : this.props.children;
