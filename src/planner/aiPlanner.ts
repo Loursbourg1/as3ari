@@ -150,7 +150,7 @@ export function recalculatePlan(
  * Algerian weekly meal plan, then recalculates and validates every single number.
  */
 export async function generateSmartMealPlan(req: AiPlannerRequest): Promise<AiMealPlanResult> {
-  const { householdSize, budget, pantry, excludedTags, excludedIngredients, preferredIngredients, foodPreferences, catalog, prices, supabaseClient } = req;
+  const { householdSize, budget, pantry, excludedTags, excludedIngredients, preferredIngredients, foodPreferences, catalog, prices } = req;
 
   // Filter recipes according to dietary hard constraints first
   const ingMap = new Map(catalog.ingredients.map((i) => [i.id, i]));
@@ -249,41 +249,21 @@ AVAILABLE RECIPES:
 ${recipeManifest}`;
 
   try {
-    // Use supabase.functions.invoke() — the SDK automatically attaches the anon key
-    // and any active session token. The API key never leaves Supabase secrets.
+    // Same-origin Vercel serverless function — no CORS, API key stays server-side.
     let data: unknown;
-    if (supabaseClient) {
-      const { data: invokeData, error: invokeError } = await supabaseClient.functions.invoke('gemini-proxy', {
-        body: {
-          contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-          generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: 1024,
-            responseMimeType: 'application/json',
-          },
-        },
-      });
-      if (invokeError) throw new Error(`Gemini proxy: ${invokeError.message}`);
-      data = invokeData;
-    } else {
-      // Fallback: raw fetch (used in tests / offline demo mode)
-      const proxyUrl = `${config.supabaseUrl}/functions/v1/gemini-proxy`;
-      const res = await fetch(proxyUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': config.supabaseAnonKey },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-          generationConfig: { temperature: 0.4, maxOutputTokens: 1024, responseMimeType: 'application/json' },
-        }),
-      });
-      if (!res.ok) {
-        const errText = await res.text().catch(() => '');
-        let errorDetail = `HTTP ${res.status}`;
-        try { errorDetail = (JSON.parse(errText) as { error?: { message?: string } }).error?.message || errorDetail; } catch { errorDetail = errText || errorDetail; }
-        throw new Error(`Gemini proxy: ${errorDetail}`);
-      }
-      data = await res.json();
+    const proxyRes = await fetch('/api/gemini-proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+        generationConfig: { temperature: 0.4, maxOutputTokens: 1024, responseMimeType: 'application/json' },
+      }),
+    });
+    if (!proxyRes.ok) {
+      const detail = await proxyRes.text().catch(() => '');
+      throw new Error(`Gemini proxy: HTTP ${proxyRes.status} ${detail}`);
     }
+    data = await proxyRes.json();
 
     const candidateText = (data as { candidates?: { content?: { parts?: { text?: string }[] } }[] })
       ?.candidates?.[0]?.content?.parts?.[0]?.text;
