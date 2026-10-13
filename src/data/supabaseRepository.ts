@@ -306,6 +306,35 @@ export function createSupabaseContributionApi(client: SupabaseClient, opts: { su
         return data as { id: string; status: ReportStatus; normalized_price: string; comparison_unit: ComparisonUnit };
       }
       if (!v.shop_id && v.location_label) {
+        // Upload photo to Supabase Storage if a data URL was provided.
+        // Storing raw base64 in DB columns is wasteful; use Storage instead.
+        let resolvedPhotoUrl: string | null = v.photo_url ?? null;
+        if (resolvedPhotoUrl && resolvedPhotoUrl.startsWith('data:')) {
+          const { data: { user } } = await client.auth.getUser();
+          if (user) {
+            const match = /^data:(image\/[a-z]+);base64,(.+)$/.exec(resolvedPhotoUrl);
+            if (match && match[1] && match[2]) {
+              const mime = match[1];
+              const ext = mime.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg';
+              const bytes = Uint8Array.from(atob(match[2]), (c) => c.charCodeAt(0));
+
+              const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+              const { error: upErr } = await client.storage
+                .from('report-photos')
+                .upload(path, bytes, { contentType: mime, upsert: false });
+              if (!upErr) {
+                const { data: urlData } = client.storage
+                  .from('report-photos')
+                  .getPublicUrl(path);
+                resolvedPhotoUrl = urlData.publicUrl;
+              } else {
+                // Upload failed — submit without photo rather than blocking the report
+                resolvedPhotoUrl = null;
+              }
+            }
+          }
+        }
+
         const { data, error } = await client.rpc('submit_report_with_location', {
           p_product_id: v.product_id,
           p_price: v.price,
@@ -315,14 +344,17 @@ export function createSupabaseContributionApi(client: SupabaseClient, opts: { su
           p_location_label: v.location_label,
           p_lat: v.lat ?? null,
           p_lng: v.lng ?? null,
-          p_photo_url: v.photo_url ?? null,
+          p_photo_url: resolvedPhotoUrl,
           p_is_anonymous: v.is_anonymous ?? true,
           p_reporter_name: v.is_anonymous ? null : (v.reporter_name ?? null),
+          p_custom_product_name: v.custom_product_name ?? null,
+          p_custom_product_category: v.custom_product_category ?? null,
         });
         if (error) fail(error);
         const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown>;
         return { id: String(row.id), status: row.status as ReportStatus, normalized_price: dec(row.normalized_price), comparison_unit: row.comparison_unit as ComparisonUnit };
       }
+
       const { data, error } = await client.rpc('submit_price_report', {
         p_product_id: v.product_id,
         p_shop_id: v.shop_id,
