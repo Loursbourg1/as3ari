@@ -262,6 +262,9 @@ describe('moderation, flags and corroboration', () => {
     const row = queue.rows.find((x) => x.id === id);
     expect(row).toBeDefined();
     expect(row!.shop_name).toBe('Souk El Djemaa');
+    await as(db, user(admin), () => db.query(`select public.moderate_price_report($1, 'approve')`, [id]));
+    const pub = await as(db, ANON, () => db.query(`select id from public.public_price_observations where id = $1`, [id]));
+    expect(pub.rows).toHaveLength(1);
   });
 
   it('moderators cannot be bypassed by invalid transitions', async () => {

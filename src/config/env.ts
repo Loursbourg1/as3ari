@@ -10,9 +10,9 @@ const supabaseAnonKey =
 
 // Google reCAPTCHA site key (falls back to Google official test site key so widget is always visible)
 const recaptchaSiteKey =
-  (import.meta.env.VITE_RECAPTCHA_SITE_KEY || import.meta.env.RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI').trim();
+  (import.meta.env.VITE_RECAPTCHA_SITE_KEY || import.meta.env.RECAPTCHA_SITE_KEY || '').trim();
 
-const rawDemo = (import.meta.env.VITE_SHOW_DEMO_DATA ?? import.meta.env.DEMO_DATA ?? import.meta.env.SHOW_DEMO_DATA ?? 'true');
+const rawDemo = (import.meta.env.VITE_SHOW_DEMO_DATA ?? import.meta.env.DEMO_DATA ?? import.meta.env.SHOW_DEMO_DATA ?? 'false');
 const rawRequireEmail = (import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION ?? import.meta.env.REQUIRE_EMAIL_VERIFICATION ?? 'false');
 
 export const config = {

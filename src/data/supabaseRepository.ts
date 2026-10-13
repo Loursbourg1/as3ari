@@ -229,7 +229,7 @@ export function createSupabaseRepository(client: SupabaseClient, opts: { showDem
 
       const buildQuery = (wilaya?: number) => {
         let query = client.from('public_price_observations').select('*', { count: 'exact' });
-        if (wilaya !== undefined) query = query.eq('wilaya_code', wilaya);
+        if (wilaya !== undefined) query = query.or(`wilaya_code.eq.${wilaya},wilaya_code.is.null`);
         if (q.areaId) query = query.eq('area_id', q.areaId);
         if (q.productId) query = query.eq('product_id', q.productId);
         if (categoryIds) query = query.in('product_id', categoryIds.length ? categoryIds : ['__none__']);
