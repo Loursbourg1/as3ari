@@ -55,6 +55,7 @@ export interface Product extends LocalizedName {
   /** Plausibility bounds (DZD per comparison unit) used to reject absurd reports. */
   min_unit_price: string;
   max_unit_price: string;
+  is_custom?: boolean;
 }
 
 export interface Ingredient extends LocalizedName {

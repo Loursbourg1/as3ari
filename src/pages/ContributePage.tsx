@@ -19,10 +19,10 @@ import { addDays } from '../domain/dates';
 import { formatDZD, parseMoney, parseQuantity } from '../domain/money';
 import { priceReportInput } from '../domain/reportSchema';
 import { normalizeUnitPrice, quantityWithinBounds, unitsForDimension } from '../domain/units';
-import type { UnitCode, Product } from '../domain/types';
+import type { UnitCode, Product, Dimension } from '../domain/types';
 import { useI18n } from '../i18n/I18nProvider';
 import type { MessageKey } from '../i18n/en';
-import { platform } from '../platform/platform';
+import { platform, readJson, writeJson } from '../platform/platform';
 import { compressImageFile } from '../lib/image';
 import { SearchBox } from '../components/SearchBox';
 import { GoogleCaptcha } from '../components/GoogleCaptcha';
@@ -53,6 +53,42 @@ export default function ContributePage() {
   const [quantity, setQuantity] = useState('1');
   const [unit, setUnit] = useState<UnitCode | ''>('');
   const [observedOn, setObservedOn] = useState(today);
+
+  // Custom product creation state
+  const [isCustomMode, setIsCustomMode] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customCategoryId, setCustomCategoryId] = useState('pantry');
+  const [customDimension, setCustomDimension] = useState<Dimension>('mass');
+
+  const handleCreateCustomProduct = (nameInput: string, categoryIdInput: string, dimensionInput: Dimension) => {
+    const clean = nameInput.trim();
+    if (!clean) return;
+    const slug = 'cust-' + clean.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 42) + '-' + Math.random().toString(36).slice(2, 6);
+    const newProd: Product = {
+      id: slug,
+      category_id: categoryIdInput,
+      dimension: dimensionInput,
+      name_en: clean,
+      name_fr: clean,
+      name_ar: clean,
+      variant_en: null,
+      variant_fr: null,
+      variant_ar: null,
+      search_terms: [clean.toLowerCase()],
+      min_unit_price: '5',
+      max_unit_price: '50000',
+      is_custom: true,
+    };
+    const saved = readJson<Product[]>('as3ari.local_products', []);
+    writeJson('as3ari.local_products', [newProd, ...saved.filter((p) => p.id !== newProd.id)]);
+    setSelectedProduct(newProd);
+    setIsCustomMode(false);
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next.product;
+      return next;
+    });
+  };
 
   // Photo state
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
@@ -226,6 +262,8 @@ export default function ContributePage() {
       is_anonymous: isAnonymous,
       reporter_name: isAnonymous ? null : (reporterName.trim() || null),
       recaptcha_token: captchaToken ?? null,
+      custom_product_name: selectedProduct?.is_custom ? name(selectedProduct) : null,
+      custom_product_category: selectedProduct?.is_custom ? selectedProduct.category_id : null,
     };
 
     const parseCheck = priceReportInput.safeParse(payload);
@@ -273,34 +311,123 @@ export default function ContributePage() {
           <label className="block text-sm font-bold text-ink">
             1. {t('contribute.product')} <span className="text-danger">*</span>
           </label>
-          <SearchBox
-            catalog={cat}
-            initialQuery={selectedProduct ? name(selectedProduct) : ''}
-            onSelect={(p) => {
-              setSelectedProduct(p);
-              setFieldErrors((prev) => {
-                const next = { ...prev };
-                delete next.product;
-                return next;
-              });
-            }}
-            onClear={() => setSelectedProduct(null)}
-          />
+          {!isCustomMode && (
+            <SearchBox
+              catalog={cat}
+              initialQuery={selectedProduct ? name(selectedProduct) : ''}
+              onCreateCustom={(query) => {
+                setCustomName(query);
+                setIsCustomMode(true);
+              }}
+              onSelect={(p) => {
+                setSelectedProduct(p);
+                setFieldErrors((prev) => {
+                  const next = { ...prev };
+                  delete next.product;
+                  return next;
+                });
+              }}
+              onClear={() => setSelectedProduct(null)}
+            />
+          )}
 
-          {selectedProduct ? (
+          {/* Toggle between catalog search and custom product creation */}
+          <div className="flex items-center justify-between pt-0.5">
+            <button
+              type="button"
+              onClick={() => setIsCustomMode(!isCustomMode)}
+              className="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline"
+            >
+              {isCustomMode ? `← ${t('common.cancel')}` : `+ ${t('contribute.customProduct')}`}
+            </button>
+          </div>
+
+          {/* Custom Product Input Form */}
+          {isCustomMode && (
+            <div className="rounded-2xl border border-brand-200 bg-brand-50/40 p-3.5 space-y-3">
+              <p className="text-xs font-bold text-brand-900">{t('contribute.customProduct')}</p>
+              <div>
+                <label htmlFor="customProdName" className="block text-xs font-semibold text-ink-2 mb-1">
+                  {t('contribute.customProductName')}
+                </label>
+                <TextInput
+                  id="customProdName"
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value.slice(0, 80))}
+                  placeholder={t('contribute.customProductNameHint')}
+                  className="rounded-xl bg-surface"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label htmlFor="customCat" className="block text-xs font-semibold text-ink-2 mb-1">
+                    {t('contribute.customCategory')}
+                  </label>
+                  <Select
+                    id="customCat"
+                    value={customCategoryId}
+                    onChange={(e) => setCustomCategoryId(e.target.value)}
+                    className="rounded-xl bg-surface"
+                  >
+                    {cat.categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {name(c)}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+
+                <div>
+                  <label htmlFor="customDim" className="block text-xs font-semibold text-ink-2 mb-1">
+                    {t('contribute.customDimension')}
+                  </label>
+                  <Select
+                    id="customDim"
+                    value={customDimension}
+                    onChange={(e) => setCustomDimension(e.target.value as Dimension)}
+                    className="rounded-xl bg-surface"
+                  >
+                    <option value="mass">{t('contribute.dimension.mass')}</option>
+                    <option value="volume">{t('contribute.dimension.volume')}</option>
+                    <option value="discrete">{t('contribute.dimension.discrete')}</option>
+                  </Select>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() => handleCreateCustomProduct(customName, customCategoryId, customDimension)}
+                disabled={!customName.trim()}
+                className="w-full rounded-xl text-xs font-bold py-2"
+              >
+                ✓ {t('contribute.customAdded')}
+              </Button>
+            </div>
+          )}
+
+          {selectedProduct && !isCustomMode ? (
             <div className="flex items-center justify-between rounded-xl bg-brand-50 p-2.5 text-xs text-brand-900 border border-brand-200">
-              <span className="font-bold">
-                {name(selectedProduct)} {variant(selectedProduct) ? `(${variant(selectedProduct)})` : ''}
-              </span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-bold truncate">
+                  {name(selectedProduct)} {variant(selectedProduct) ? `(${variant(selectedProduct)})` : ''}
+                </span>
+                {selectedProduct.is_custom && (
+                  <span className="shrink-0 rounded-full bg-brand-200 px-1.5 py-0.5 text-[10px] font-bold text-brand-800">
+                    Custom
+                  </span>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setSelectedProduct(null)}
-                className="text-xs font-semibold text-brand-700 underline"
+                className="text-xs font-semibold text-brand-700 underline shrink-0"
               >
                 {t('common.cancel')}
               </button>
             </div>
-          ) : (
+          ) : !isCustomMode && (
             <div className="flex flex-wrap gap-1.5 pt-1">
               {cat.categories.slice(0, 4).map((c) => (
                 <button

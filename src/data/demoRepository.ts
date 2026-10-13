@@ -2,7 +2,7 @@ import { Big } from '../domain/money';
 import { todayInAlgeria } from '../domain/dates';
 import { normalizeUnitPrice } from '../domain/units';
 import { readJson, writeJson } from '../platform/platform';
-import type { Catalog, Page, PriceObservation, Shop } from '../domain/types';
+import type { Catalog, Page, PriceObservation, Product, Shop } from '../domain/types';
 import { CATEGORIES, INGREDIENTS, PRODUCTS } from './reference/catalog';
 import { RECIPES } from './reference/recipes';
 import { LOCAL_AREAS, WILAYAS } from './reference/geography';
@@ -33,10 +33,12 @@ export function createDemoRepository(today = todayInAlgeria()): PriceRepository 
 } {
   const savedLocalObs = readJson<PriceObservation[]>(LOCAL_OBS_KEY, []);
   const observations = [...savedLocalObs, ...demoObservations(today)];
+  const localProducts = readJson<Product[]>('as3ari.local_products', []);
+  const allProducts = [...PRODUCTS, ...localProducts];
 
   const catalog: Catalog = {
     categories: CATEGORIES,
-    products: PRODUCTS,
+    products: allProducts,
     ingredients: INGREDIENTS,
     recipes: RECIPES,
     wilayas: WILAYAS,
@@ -46,7 +48,7 @@ export function createDemoRepository(today = todayInAlgeria()): PriceRepository 
   const contributions: ContributionApi = {
     available: true,
     async submitReport(input) {
-      const prod = PRODUCTS.find((p) => p.id === input.product_id);
+      const prod = allProducts.find((p) => p.id === input.product_id);
       const normalized = prod ? normalizeUnitPrice(input.price, input.quantity, input.unit, prod.dimension) : null;
       const id = 'rep_' + Date.now() + '_' + Math.random().toString(16).slice(2, 6);
 

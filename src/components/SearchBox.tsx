@@ -11,11 +11,12 @@ interface Props {
   /** Called with the chosen product and the full list of matches for the query. */
   onSelect: (product: Product, query: string, matches: Product[]) => void;
   onClear?: () => void;
+  onCreateCustom?: (query: string) => void;
   className?: string;
 }
 
 /** Accessible combobox over the database-backed product catalogue. */
-export function SearchBox({ catalog, initialQuery = '', onSelect, onClear, className }: Props) {
+export function SearchBox({ catalog, initialQuery = '', onSelect, onClear, onCreateCustom, className }: Props) {
   const { t, name, variant } = useI18n();
   const [query, setQuery] = useState(initialQuery);
   const [open, setOpen] = useState(false);
@@ -106,7 +107,19 @@ export function SearchBox({ catalog, initialQuery = '', onSelect, onClear, class
           aria-label={t('search.suggestions')}
           className="absolute inset-x-0 top-full z-[1100] mt-1 max-h-80 overflow-auto rounded-md border border-line bg-surface py-1 shadow-float"
         >
-          {matches.length === 0 && <li className="px-3 py-2.5 text-sm text-muted">{t('search.noResults', { q: query.trim() })}</li>}
+          {matches.length === 0 && <li className="px-3 py-2 text-sm text-muted">{t('search.noResults', { q: query.trim() })}</li>}
+          {onCreateCustom && query.trim().length > 1 && (
+            <li
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                setOpen(false);
+                onCreateCustom(query.trim());
+              }}
+              className="flex cursor-pointer items-center gap-2 border-b border-line/60 bg-brand-50/40 px-3 py-2 text-xs font-bold text-brand-700 hover:bg-brand-50"
+            >
+              <span>+ {t('contribute.customProduct')}: &ldquo;{query.trim()}&rdquo;</span>
+            </li>
+          )}
           {matches.map((p, i) => (
             <li
               key={p.id}

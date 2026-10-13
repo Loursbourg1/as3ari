@@ -9,7 +9,7 @@ export default defineConfig({
     host: true,
     port: 5173,
   },
-  envPrefix: ['VITE_', 'RECAPTCHA_', 'DEMO_', 'SUPABASE_'],
+  envPrefix: ['VITE_', 'RECAPTCHA_', 'DEMO_', 'SUPABASE_', 'Gemini', 'GEMINI'],
   build: { sourcemap: false, chunkSizeWarningLimit: 900 },
   test: {
     projects: [

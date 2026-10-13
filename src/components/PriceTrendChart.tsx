@@ -108,6 +108,38 @@ export function PriceTrendChart({
     return allAvailableProducts.filter((p) => p.category_id === selectedCategory);
   }, [allAvailableProducts, selectedCategory]);
 
+  // Dynamic quick pills based on category selection
+  const visiblePills = useMemo(() => {
+    if (selectedCategory === 'all') {
+      const stapleIds = ['potatoes', 'milk-pasteurised-bag', 'eggs', 'chicken-whole', 'tomatoes', 'couscous', 'lentils', 'vegetable-oil'];
+      const staples = allAvailableProducts.filter((p) => stapleIds.includes(p.id));
+      return staples.length > 0 ? staples : allAvailableProducts.slice(0, 8);
+    }
+    return filteredProducts.slice(0, 12);
+  }, [selectedCategory, allAvailableProducts, filteredProducts]);
+
+  // Category overview data for "All categories" view
+  const categoryStats = useMemo(() => {
+    return catalog.categories.map((c) => {
+      const prods = allAvailableProducts.filter((p) => p.category_id === c.id);
+      let avgPriceSum = 0;
+      let count = 0;
+      for (const p of prods) {
+        const bench = PRODUCT_BENCHMARKS[p.id];
+        const pr = bench ? bench.basePrice : Number(p.min_unit_price || 100);
+        avgPriceSum += pr;
+        count++;
+      }
+      const avg = count > 0 ? Math.round(avgPriceSum / count) : 0;
+      return {
+        category: c,
+        productCount: prods.length,
+        avgPrice: avg,
+        firstProductId: prods[0]?.id ?? 'potatoes',
+      };
+    });
+  }, [catalog.categories, allAvailableProducts]);
+
   // Ensure selectedProductId is valid when category changes
   const activeProduct = useMemo(() => {
     return (
@@ -391,18 +423,16 @@ export function PriceTrendChart({
           </Select>
         </div>
 
-        {/* Quick popular staples shortcuts */}
+        {/* Quick popular staples shortcuts or category items */}
         <div className="flex flex-wrap gap-1.5">
-          {['potatoes', 'milk-pasteurised-bag', 'eggs', 'chicken-whole', 'tomatoes', 'vegetable-oil'].map((id) => {
-            const p = allAvailableProducts.find((item) => item.id === id);
-            if (!p) return null;
-            const isSelected = activeProduct?.id === id;
+          {visiblePills.map((p) => {
+            const isSelected = activeProduct?.id === p.id;
             return (
               <button
-                key={id}
+                key={p.id}
                 type="button"
                 onClick={() => {
-                  setSelectedProductId(id);
+                  setSelectedProductId(p.id);
                   setHoveredPoint(null);
                 }}
                 className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors border ${
@@ -417,6 +447,34 @@ export function PriceTrendChart({
           })}
         </div>
       </div>
+
+      {/* When "All categories" is active: Category Market Overview Snapshot */}
+      {selectedCategory === 'all' && (
+        <div className="mt-4 space-y-2 rounded-2xl bg-canvas p-3 border border-line">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-ink">{t('trends.allCategoriesOverview')}</span>
+            <span className="text-[11px] text-muted">{categoryStats.length} {t('trends.selectCategory').toLowerCase()}</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+            {categoryStats.map((item) => (
+              <button
+                key={item.category.id}
+                type="button"
+                onClick={() => {
+                  setSelectedCategory(item.category.id);
+                  setSelectedProductId(item.firstProductId);
+                  setHoveredPoint(null);
+                }}
+                className="flex flex-col items-start p-2.5 rounded-xl border border-line bg-surface text-start hover:border-brand-500 hover:bg-brand-50/40 transition-all"
+              >
+                <span className="text-xs font-bold text-ink truncate w-full">{name(item.category)}</span>
+                <span className="text-[11px] text-muted">{item.productCount} items</span>
+                <span className="num mt-1 text-xs font-black text-brand-700">≈ {item.avgPrice} DZD</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Market Statistics Cards */}
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">

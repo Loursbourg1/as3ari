@@ -20,6 +20,7 @@ import { RECIPES } from './reference/recipes';
 import { LOCAL_AREAS, WILAYAS } from './reference/geography';
 import { DEMO_SHOPS, demoObservations } from './demo/fixtures';
 import { todayInAlgeria } from '../domain/dates';
+import { readJson } from '../platform/platform';
 
 const dec = (v: unknown): string => (v === null || v === undefined ? '' : String(v));
 const decOrNull = (v: unknown): string | null => (v === null || v === undefined ? null : String(v));
@@ -99,20 +100,22 @@ export function createSupabaseRepository(client: SupabaseClient, opts: { showDem
           fetchAll<Record<string, unknown>>(client, 'wilayas', '*', 'code'),
           fetchAll<LocalArea>(client, 'local_areas'),
         ]);
+        const localProducts = readJson<Product[]>('as3ari.local_products', []);
         // If Supabase database is unseeded, fall back to bundled fixtures so the app always works
         if (categories.length === 0 || products.length === 0) {
           return {
             categories: CATEGORIES,
-            products: PRODUCTS,
+            products: [...PRODUCTS, ...localProducts],
             ingredients: INGREDIENTS,
             recipes: RECIPES,
             wilayas: WILAYAS,
             areas: LOCAL_AREAS,
           };
         }
+        const mappedProducts = products.map((p) => ({ ...(p as unknown as Product), min_unit_price: dec(p.min_unit_price), max_unit_price: dec(p.max_unit_price) }));
         return {
           categories: categories.map((c) => ({ ...c, recent_days: Number(c.recent_days), stale_days: Number(c.stale_days) })),
-          products: products.map((p) => ({ ...(p as unknown as Product), min_unit_price: dec(p.min_unit_price), max_unit_price: dec(p.max_unit_price) })),
+          products: [...mappedProducts, ...localProducts],
           ingredients,
           recipes: recipes.map((r) => ({
             ...(r as unknown as Recipe),
@@ -128,10 +131,11 @@ export function createSupabaseRepository(client: SupabaseClient, opts: { showDem
           areas,
         };
       } catch {
+        const localProducts = readJson<Product[]>('as3ari.local_products', []);
         // Network error or RLS blocking — return bundled reference data so app is always usable
         return {
           categories: CATEGORIES,
-          products: PRODUCTS,
+          products: [...PRODUCTS, ...localProducts],
           ingredients: INGREDIENTS,
           recipes: RECIPES,
           wilayas: WILAYAS,

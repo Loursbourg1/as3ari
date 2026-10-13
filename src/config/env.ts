@@ -8,9 +8,19 @@ const supabaseUrl =
 const supabaseAnonKey =
   (import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.SUPABASE_ANON_KEY || '').trim();
 
-// Google reCAPTCHA v2 site key (falls back to Google official test site key so widget is always visible)
+// Google reCAPTCHA site key (falls back to Google official test site key so widget is always visible)
 const recaptchaSiteKey =
   (import.meta.env.VITE_RECAPTCHA_SITE_KEY || import.meta.env.RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI').trim();
+
+// Gemini API Key for smart AI meal planning
+const geminiApiKey = (
+  (import.meta.env.VITE_GEMINI_API_KEY as string | undefined) ||
+  (import.meta.env.GEMINI_API_KEY as string | undefined) ||
+  (import.meta.env.Gemini as string | undefined) ||
+  (import.meta.env.VITE_Gemini as string | undefined) ||
+  (import.meta.env.GEMINI as string | undefined) ||
+  ''
+).trim();
 
 const rawDemo = (import.meta.env.VITE_SHOW_DEMO_DATA ?? import.meta.env.DEMO_DATA ?? import.meta.env.SHOW_DEMO_DATA ?? 'true');
 const rawRequireEmail = (import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION ?? import.meta.env.REQUIRE_EMAIL_VERIFICATION ?? 'false');
@@ -19,6 +29,8 @@ export const config = {
   supabaseUrl,
   supabaseAnonKey,
   recaptchaSiteKey,
+  geminiApiKey,
+  hasGeminiAi: Boolean(geminiApiKey),
   /** Without Supabase credentials the app runs on bundled, clearly-labelled synthetic data. */
   isDemoMode: !supabaseUrl || !supabaseAnonKey,
   showDemoData: rawDemo !== 'false',

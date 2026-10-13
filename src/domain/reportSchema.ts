@@ -45,6 +45,8 @@ export const priceReportInput = z
       .optional()
       .nullable(),
     recaptcha_token: z.string().max(4096).optional().nullable(),
+    custom_product_name: z.string().trim().min(2).max(120).optional().nullable(),
+    custom_product_category: z.string().trim().max(64).optional().nullable(),
   })
   .strict()
   .refine((v) => Number(v.price) > 0 && Number(v.price) <= 1_000_000, { path: ['price'], message: 'invalid_price' })
