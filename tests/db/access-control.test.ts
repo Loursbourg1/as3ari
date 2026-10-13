@@ -234,6 +234,25 @@ describe('moderation, flags and corroboration', () => {
     expect(mine.rows.find((x) => x.id === id)!.status).toBe('approved');
   });
 
+  it('shows self-reported (no shop) pending reports in the moderation queue', async () => {
+    const submitted = await as(db, user(alice), () =>
+      db.query<{ id: string }>(
+        `select id from public.submit_report_with_location(
+          'onions'::text, 80::numeric, 1::numeric, 'kg'::public.unit_code, $1::date, 'Souk El Djemaa'::text,
+          34.67::numeric, 3.25::numeric, null::text, true, null::text, null::text, null::text
+        )`,
+        [today],
+      ),
+    );
+    const id = submitted.rows[0]!.id;
+    const queue = await as(db, user(admin), () =>
+      db.query<{ id: string; shop_name: string }>(`select id, shop_name from public.moderation_queue('pending')`),
+    );
+    const row = queue.rows.find((x) => x.id === id);
+    expect(row).toBeDefined();
+    expect(row!.shop_name).toBe('Souk El Djemaa');
+  });
+
   it('moderators cannot be bypassed by invalid transitions', async () => {
     const r = await submit(alice, { product: 'lentils', price: '280', qty: '1' });
     const id = r.rows[0]!.id;

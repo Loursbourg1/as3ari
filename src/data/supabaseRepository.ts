@@ -381,7 +381,7 @@ export function createSupabaseContributionApi(client: SupabaseClient, _opts?: { 
       if (error) fail(error);
       return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
         ...mapMyReport({ ...r, rejection_reason: null }),
-        shop_name: String(r.shop_name),
+        shop_name: String(r.shop_name ?? r.location_label ?? ''),
         contributor_id: (r.contributor_id as string | null) ?? null,
         open_flags: Number(r.open_flags ?? 0),
         contributor_report_count: Number(r.contributor_report_count ?? 0),
