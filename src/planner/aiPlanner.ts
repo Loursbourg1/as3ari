@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { Big } from '../domain/money';
 import type { Catalog } from '../domain/types';
 import type { IngredientPrice } from './prices';
+import { config } from '../config/env';
 import {
   generateMealPlan,
   type MealPlanResult,
@@ -145,7 +146,7 @@ export function recalculatePlan(
  * Algerian weekly meal plan, then recalculates and validates every single number.
  */
 export async function generateSmartMealPlan(req: AiPlannerRequest): Promise<AiMealPlanResult> {
-  const { householdSize, budget, pantry, excludedTags, excludedIngredients, preferredIngredients, foodPreferences, catalog, prices, apiKey } = req;
+  const { householdSize, budget, pantry, excludedTags, excludedIngredients, preferredIngredients, foodPreferences, catalog, prices } = req;
 
   // Filter recipes according to dietary hard constraints first
   const ingMap = new Map(catalog.ingredients.map((i) => [i.id, i]));
@@ -180,8 +181,9 @@ export async function generateSmartMealPlan(req: AiPlannerRequest): Promise<AiMe
     return recalculatePlan(cached.meals, householdSize, budget, pantry, catalog, prices, cached.explanation, true);
   }
 
-  // If no Gemini API key provided, seamlessly execute deterministic planner
-  if (!apiKey || !apiKey.trim()) {
+  // If Supabase is not configured (pure offline demo mode), run the deterministic planner.
+  // In production the proxy edge function supplies the API key from Supabase secrets.
+  if (!config.supabaseUrl || !config.supabaseAnonKey) {
     const deterministic = generateMealPlan(
       { householdSize, budget, pantry, excludedTags, excludedIngredients, preferredIngredients },
       catalog,
@@ -252,19 +254,18 @@ ${recipeManifest}`;
       },
     });
 
-    let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey.trim())}`, {
+    // Call the Gemini proxy edge function — the API key is a server-side Supabase
+    // secret and is never exposed to the browser. Model fallback is handled server-side.
+    const proxyUrl = `${config.supabaseUrl}/functions/v1/gemini-proxy`;
+    let res = await fetch(proxyUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        // Pass the anon key so the edge function can validate the request origin
+        'apikey': config.supabaseAnonKey,
+      },
       body: payload,
     });
-
-    if (!res.ok && res.status === 404) {
-      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey.trim())}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload,
-      });
-    }
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '');

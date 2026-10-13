@@ -55,7 +55,9 @@ export const config = {
     return getGeminiApiKey();
   },
   get hasGeminiAi(): boolean {
-    return Boolean(getGeminiApiKey());
+    // The Gemini key lives in Supabase secrets (server-side). AI is available
+    // whenever Supabase is configured; the proxy returns 503 if not set.
+    return Boolean(supabaseUrl && supabaseAnonKey);
   },
   /** Without Supabase credentials the app runs on bundled, clearly-labelled synthetic data. */
   isDemoMode: !supabaseUrl || !supabaseAnonKey,
