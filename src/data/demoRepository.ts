@@ -170,9 +170,7 @@ export function createDemoRepository(today = todayInAlgeria()): PriceRepository 
           return pa.cmp(pb);
         });
       } else {
-        items = [...items].sort((a, b) =>
-          a.observed_on === b.observed_on ? b.submitted_at.localeCompare(a.submitted_at) : b.observed_on.localeCompare(a.observed_on),
-        );
+        items = [...items].sort((a, b) => b.submitted_at.localeCompare(a.submitted_at));
       }
       return delay({
         items: items.slice(q.offset, q.offset + q.limit),

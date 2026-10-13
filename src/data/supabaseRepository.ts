@@ -20,6 +20,7 @@ import { RECIPES } from './reference/recipes';
 import { LOCAL_AREAS, WILAYAS } from './reference/geography';
 import { DEMO_SHOPS, demoObservations } from './demo/fixtures';
 import { todayInAlgeria } from '../domain/dates';
+import { searchProducts } from '../domain/search';
 import { readJson } from '../platform/platform';
 
 const dec = (v: unknown): string => (v === null || v === undefined ? '' : String(v));
@@ -199,18 +200,49 @@ export function createSupabaseRepository(client: SupabaseClient, opts: { showDem
     },
 
     async listFeed(q): Promise<Page<PriceObservation>> {
+      const categoryIds = q.categoryId
+        ? PRODUCTS.filter((p) => p.category_id === q.categoryId).map((p) => p.id)
+        : null;
+      const searchIds = q.search?.trim()
+        ? searchProducts(PRODUCTS, CATEGORIES, q.search.trim(), 80).map((m) => m.product.id)
+        : null;
+      const locTerm = q.search?.trim().replace(/[%_,]/g, ' ').replace(/\s+/g, ' ').trim() ?? '';
+
+      const filterDemo = (rows: PriceObservation[]) => {
+        let items = rows;
+        if (q.areaId) items = items.filter((o) => o.area_id === q.areaId);
+        if (q.productId) items = items.filter((o) => o.product_id === q.productId);
+        if (categoryIds) items = items.filter((o) => categoryIds.includes(o.product_id));
+        if (searchIds) {
+          const s = locTerm.toLowerCase();
+          items = items.filter(
+            (o) => searchIds.includes(o.product_id) || (o.location_label && o.location_label.toLowerCase().includes(s)),
+          );
+        }
+        items = [...items].sort((a, b) =>
+          q.sort === 'price'
+            ? Number(a.normalized_price ?? Infinity) - Number(b.normalized_price ?? Infinity)
+            : b.submitted_at.localeCompare(a.submitted_at),
+        );
+        return items;
+      };
+
       const buildQuery = (wilaya?: number) => {
         let query = client.from('public_price_observations').select('*', { count: 'exact' });
         if (wilaya !== undefined) query = query.eq('wilaya_code', wilaya);
         if (q.areaId) query = query.eq('area_id', q.areaId);
         if (q.productId) query = query.eq('product_id', q.productId);
-        if (!opts.showDemoData) query = query.eq('is_demo', false);
-
-        if (q.sort === 'price') {
-          query = query.order('normalized_price', { ascending: true });
-        } else {
-          query = query.order('observed_on', { ascending: false }).order('submitted_at', { ascending: false });
+        if (categoryIds) query = query.in('product_id', categoryIds.length ? categoryIds : ['__none__']);
+        if (searchIds) {
+          const loc = locTerm ? `location_label.ilike.%${locTerm}%` : '';
+          if (searchIds.length && loc) query = query.or(`product_id.in.(${searchIds.join(',')}),${loc}`);
+          else if (searchIds.length) query = query.in('product_id', searchIds);
+          else if (loc) query = query.ilike('location_label', `%${locTerm}%`);
+          else query = query.eq('product_id', '__none__');
         }
+        if (!opts.showDemoData) query = query.eq('is_demo', false);
+        if (q.sort === 'price') query = query.order('normalized_price', { ascending: true, nullsFirst: false });
+        else query = query.order('submitted_at', { ascending: false });
         return query.range(q.offset, q.offset + q.limit - 1);
       };
 
@@ -228,24 +260,25 @@ export function createSupabaseRepository(client: SupabaseClient, opts: { showDem
 
         // If still empty and showDemoData is on, inject bundled demo observations
         if ((!data || data.length === 0) && opts.showDemoData && q.offset === 0) {
-          const today = todayInAlgeria();
-          const demos = demoObservations(today);
-          const filtered = q.wilayaCode !== undefined
-            ? demos.filter((o) => o.wilaya_code === q.wilayaCode)
-            : demos;
-          const slice = (filtered.length > 0 ? filtered : demos).slice(0, q.limit);
-          return { items: slice, total: slice.length, offset: 0, limit: q.limit };
+          let demos = demoObservations(todayInAlgeria());
+          if (q.wilayaCode !== undefined) {
+            const inWilaya = demos.filter((o) => o.wilaya_code === q.wilayaCode);
+            if (inWilaya.length) demos = inWilaya;
+          }
+          const filtered = filterDemo(demos);
+          return { items: filtered.slice(0, q.limit), total: filtered.length, offset: 0, limit: q.limit };
         }
 
         return { items: (data ?? []).map(mapObservation), total: count ?? null, offset: q.offset, limit: q.limit };
       } catch {
-        // Network failure — return demo data as fallback so feed is never empty
         if (opts.showDemoData && q.offset === 0) {
-          const today = todayInAlgeria();
-          const demos = demoObservations(today);
-          const filtered = q.wilayaCode !== undefined ? demos.filter((o) => o.wilaya_code === q.wilayaCode) : demos;
-          const slice = (filtered.length > 0 ? filtered : demos).slice(0, q.limit);
-          return { items: slice, total: slice.length, offset: 0, limit: q.limit };
+          let demos = demoObservations(todayInAlgeria());
+          if (q.wilayaCode !== undefined) {
+            const inWilaya = demos.filter((o) => o.wilaya_code === q.wilayaCode);
+            if (inWilaya.length) demos = inWilaya;
+          }
+          const filtered = filterDemo(demos);
+          return { items: filtered.slice(0, q.limit), total: filtered.length, offset: 0, limit: q.limit };
         }
         return { items: [], total: 0, offset: q.offset, limit: q.limit };
       }
