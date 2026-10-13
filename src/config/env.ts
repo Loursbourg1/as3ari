@@ -28,8 +28,8 @@ export const config = {
   isDemoMode: !supabaseUrl || !supabaseAnonKey,
   showDemoData: rawDemo !== 'false',
   requireEmailVerification: rawRequireEmail === 'true',
-  /** 'edge' (default) submits through the submit-report Edge Function; 'rpc' calls the database function directly. */
-  submitVia: (import.meta.env.VITE_SUBMIT_VIA as string | undefined) === 'rpc' ? 'rpc' : 'edge',
+  /** 'rpc' (default) calls the database function directly with the user JWT; 'edge' routes through the Edge Function. */
+  submitVia: (import.meta.env.VITE_SUBMIT_VIA as string | undefined) === 'edge' ? 'edge' : 'rpc',
   map: {
     tileUrl: (import.meta.env.VITE_MAP_TILE_URL as string | undefined) || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution:

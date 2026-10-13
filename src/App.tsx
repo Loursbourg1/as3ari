@@ -20,6 +20,8 @@ const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
 const MyReportsPage = lazy(() => import('./pages/MyReportsPage'));
 const ModerationPage = lazy(() => import('./pages/ModerationPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+
 
 function NotFound() {
   const { t } = useI18n();
@@ -56,6 +58,8 @@ export default function App() {
                   <Route path="me" element={<MyReportsPage />} />
                   <Route path="moderate" element={<ModerationPage />} />
                   <Route path="about" element={<AboutPage />} />
+                  <Route path="terms" element={<TermsPage />} />
+
                   <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>

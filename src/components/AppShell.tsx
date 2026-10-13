@@ -198,7 +198,22 @@ function SidebarDrawer({
             <Info className="size-4 shrink-0" aria-hidden />
             <span>{t('nav.about')}</span>
           </NavLink>
+          {/* Terms of Service link */}
+          <NavLink
+            to="/terms"
+            onClick={onClose}
+            className={({ isActive }) =>
+              cx(
+                'flex items-center gap-3 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors',
+                isActive ? 'text-brand-700 font-bold' : 'text-muted hover:bg-canvas hover:text-ink',
+              )
+            }
+          >
+            <Info className="size-4 shrink-0" aria-hidden />
+            <span>{t('nav.terms')}</span>
+          </NavLink>
         </div>
+
 
         {/* Footer: Language + Account */}
         <div className="border-t border-line bg-canvas p-4 space-y-3">
