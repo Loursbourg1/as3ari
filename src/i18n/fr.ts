@@ -294,6 +294,7 @@ export const fr: Record<MessageKey, string> = {
   'plan.ingredients': 'Ingrédients',
   'plan.steps': 'Étapes',
   'plan.estimate': 'Coût estimé de ce qu’il reste à acheter',
+  'plan.estimateUnavailable': 'Prix nécessaires',
   'plan.budgetLabel': 'Budget',
   'plan.difference': 'Écart',
   'plan.status.within': 'Dans le budget, selon les prix récents signalés.',

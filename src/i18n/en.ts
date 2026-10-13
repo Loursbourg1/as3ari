@@ -293,6 +293,7 @@ export const en = {
   'plan.ingredients': 'Ingredients',
   'plan.steps': 'Steps',
   'plan.estimate': 'Estimated cost of what you still need to buy',
+  'plan.estimateUnavailable': 'Price data needed',
   'plan.budgetLabel': 'Budget',
   'plan.difference': 'Difference',
   'plan.status.within': 'Within budget, based on recent reported prices.',

@@ -272,7 +272,7 @@ export default function MapPage() {
             disabled={locating}
             className="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-semibold text-ink-2 shadow-xs hover:bg-canvas disabled:opacity-50"
           >
-            <LocateFixed className={`size-3.5 text-brand-600 ${locating ? 'animate-spin' : ''}`} />
+            {locating ? <span className="size-3.5 animate-pulse rounded bg-brand-600/25" /> : <LocateFixed className="size-3.5 text-brand-600" />}
             <span className="hidden sm:inline">
               {locating ? t('contribute.locating') : t('contribute.useMyLocation')}
             </span>

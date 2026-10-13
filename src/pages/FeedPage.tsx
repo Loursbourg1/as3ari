@@ -191,7 +191,7 @@ export default function FeedPage() {
             aria-label={t('common.retry')}
             className="grid size-10 shrink-0 place-items-center rounded-xl border border-line-strong bg-surface text-ink-2 hover:bg-canvas disabled:opacity-50"
           >
-            <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? <span className="size-4 animate-pulse rounded bg-ink-2/25" /> : <RefreshCw className="size-4" />}
           </button>
         </div>
 

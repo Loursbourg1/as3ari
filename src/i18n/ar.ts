@@ -294,6 +294,7 @@ export const ar: Record<MessageKey, string> = {
   'plan.ingredients': 'المكونات',
   'plan.steps': 'الخطوات',
   'plan.estimate': 'التكلفة التقديرية لما تبقى شراؤه',
+  'plan.estimateUnavailable': 'بيانات الأسعار مطلوبة',
   'plan.budgetLabel': 'الميزانية',
   'plan.difference': 'الفرق',
   'plan.status.within': 'ضمن الميزانية، حسب الأسعار الحديثة المبلغ عنها.',

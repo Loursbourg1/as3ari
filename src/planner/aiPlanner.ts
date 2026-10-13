@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Big } from '../domain/money';
-import type { Catalog } from '../domain/types';
+import type { Catalog, Locale } from '../domain/types';
 import type { IngredientPrice } from './prices';
 import {
   generateMealPlan,
@@ -18,6 +18,7 @@ import {
   type PantryItem,
 } from './shoppingList';
 import { calculatePlanNutrition, type WeeklyNutritionSummary } from '../domain/nutrition';
+import { getRecipeNutrition } from '../domain/nutrition';
 import { readJson, writeJson } from '../platform/platform';
 
 /**
@@ -52,6 +53,7 @@ export interface AiPlannerRequest extends PlannerInput {
   wilayaCode: number;
   catalog: Catalog;
   prices: Map<string, IngredientPrice>;
+  locale: Locale;
   /** The Supabase client used to invoke the gemini-proxy edge function. */
   supabaseClient?: SupabaseClient | null;
   /** @deprecated Key is now in Supabase secrets; kept for interface compat. */
@@ -71,6 +73,7 @@ function computeCacheKey(req: AiPlannerRequest): string {
   const parts = [
     req.householdSize,
     req.budget ?? 'nobudget',
+    req.locale,
     req.wilayaCode,
     req.excludedTags.sort().join(','),
     req.excludedIngredients.sort().join(','),
@@ -149,7 +152,7 @@ export function recalculatePlan(
  * Algerian weekly meal plan, then recalculates and validates every single number.
  */
 export async function generateSmartMealPlan(req: AiPlannerRequest): Promise<AiMealPlanResult> {
-  const { householdSize, budget, pantry, excludedTags, excludedIngredients, preferredIngredients, foodPreferences, catalog, prices } = req;
+  const { householdSize, budget, pantry, excludedTags, excludedIngredients, preferredIngredients, foodPreferences, catalog, prices, locale } = req;
 
   // Filter recipes according to dietary hard constraints first
   const ingMap = new Map(catalog.ingredients.map((i) => [i.id, i]));
@@ -211,9 +214,22 @@ export async function generateSmartMealPlan(req: AiPlannerRequest): Promise<AiMe
   }
 
   // Build compact recipe manifest for the AI prompt
+  const localeName = locale === 'ar' ? 'Arabic' : locale === 'fr' ? 'French' : 'English';
+  const scale = new Big(householdSize).div(4);
   const recipeManifest = eligible.map((r) => {
     const mainIngredients = r.ingredients.map((ri) => ri.ingredient_id).join(', ');
-    return `ID: "${r.id}" | Name: "${r.name_fr}" (${r.name_ar}) | Slots: [${r.meal_slots.join(', ')}] | Ingredients: [${mainIngredients}]`;
+    const lines = buildShoppingLines(
+      aggregateIngredients([{ recipe: r, scale }]),
+      new Map(),
+      catalog.ingredients,
+      prices,
+    );
+    const cost = summarizeCosts(lines, null);
+    const nutrition = getRecipeNutrition(r.id);
+    const priceLabel = cost.missing.length > 0
+      ? `${cost.estimatedTotal} DZD known, ${cost.missing.length} ingredient price(s) unknown`
+      : `${cost.estimatedTotal} DZD`;
+    return `ID: "${r.id}" | Name: "${r.name_en}" (${r.name_fr}; ${r.name_ar}) | Slots: [${r.meal_slots.join(', ')}] | Approx. meal cost for this household: ${priceLabel} | Nutrition per serving: ${nutrition.calories} kcal, ${nutrition.protein}g protein, ${nutrition.fiber}g fiber | Ingredients: [${mainIngredients}]`;
   }).join('\n');
 
   const pantryList = pantry.length > 0 ? pantry.map((p) => `${p.ingredientId} (${p.quantity} ${p.unit})`).join(', ') : 'None';
@@ -226,13 +242,13 @@ Your task is to plan a balanced 7-day weekly meal plan (Day 1 to 7, each day hav
 RULES:
 1. ONLY pick recipe IDs from the AVAILABLE RECIPES list below. NEVER invent new IDs.
 2. Respect household size: ${householdSize} people.
-3. Weekly food budget target: ${budget ? `${budget} DZD` : 'Optimize for high affordability'}.
+3. Weekly food budget target: ${budget ? `${budget} DZD` : 'Optimize for high affordability'}. Use the supplied recipe cost and nutrition data to make the plan responsive to this budget. Favor nutritious recipes with protein and fiber when their cost is comparable.
 4. Prioritize recipes using available pantry items: ${pantryList}.
 5. STRICTLY obey dietary exclusions: ${exclusionsList}.
 6. Favor preferred ingredients: ${preferencesList}.
 ${foodPreferences ? `7. User note: "${foodPreferences}".` : ''}
 8. Ensure variety: avoid eating the exact same recipe twice in a row, and keep repeats under 2 times per week.
-9. Return ONLY a valid JSON object matching this schema. Do not include markdown codeblocks or extra text.
+9. Write the explanation in ${localeName}. Return ONLY a valid JSON object matching this schema. Do not include markdown codeblocks or extra text.
 
 JSON SCHEMA:
 {

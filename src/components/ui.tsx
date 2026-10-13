@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode, SelectHTMLAttributes, InputHTMLAttributes } from 'react';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useI18n } from '../i18n/I18nProvider';
 
 export function cx(...parts: (string | false | null | undefined)[]): string {
@@ -55,9 +55,10 @@ export function Badge({ tone = 'neutral', children, title, className }: { tone?:
 export function Spinner({ label }: { label?: string }) {
   const { t } = useI18n();
   return (
-    <div role="status" className="flex items-center gap-2 p-4 text-sm text-muted">
-      <Loader2 className="size-4 animate-spin" aria-hidden />
-      <span>{label ?? t('common.loading')}</span>
+    <div role="status" className="w-full max-w-sm animate-pulse space-y-2 p-4" aria-label={label ?? t('common.loading')}>
+      <span className="block h-3 w-3/4 rounded-full bg-line" />
+      <span className="block h-3 w-1/2 rounded-full bg-line" />
+      <span className="sr-only">{label ?? t('common.loading')}</span>
     </div>
   );
 }

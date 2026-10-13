@@ -83,6 +83,7 @@ export default function PlannerPage() {
         wilayaCode,
         catalog: cat!,
         prices,
+        locale,
         supabaseClient: supabase,
       });
 
@@ -482,8 +483,9 @@ function PlanResult({
           <div>
             <p className="text-[13px] font-semibold text-muted">{t('plan.estimate')}</p>
             <p className="num mt-1 text-3xl sm:text-4xl font-black text-ink" data-testid="plan-total">
-              {s.missing.length ? '≥ ' : ''}
-              {formatDZD(s.estimatedTotal, locale)}
+              {new Big(s.estimatedTotal).eq(0) && s.missing.length > 0
+                ? t('plan.estimateUnavailable')
+                : `${s.missing.length ? '≥ ' : ''}${formatDZD(s.estimatedTotal, locale)}`}
             </p>
           </div>
           {result.budgetRemaining !== null && (

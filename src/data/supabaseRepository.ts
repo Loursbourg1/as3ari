@@ -83,6 +83,16 @@ function mapObservation(r: Record<string, unknown>): PriceObservation {
   };
 }
 
+function matchingDemoObservations(q: ObservationQuery): Page<PriceObservation> {
+  let items = demoObservations(todayInAlgeria());
+  if (q.wilayaCode !== undefined) items = items.filter((o) => o.wilaya_code === q.wilayaCode);
+  if (q.productIds) items = items.filter((o) => q.productIds!.includes(o.product_id));
+  if (q.shopId) items = items.filter((o) => o.shop_id === q.shopId);
+  if (q.since) items = items.filter((o) => o.observed_on >= q.since!);
+  const total = items.length;
+  return { items: items.slice(q.offset, q.offset + q.limit), total, offset: q.offset, limit: q.limit };
+}
+
 const SHOP_COLUMNS = 'id,name,kind,wilaya_code,area_id,address_text,lat,lng,provenance,is_demo';
 
 export function createSupabaseRepository(client: SupabaseClient, opts: { showDemoData: boolean }): PriceRepository {
@@ -180,7 +190,11 @@ export function createSupabaseRepository(client: SupabaseClient, opts: { showDem
       if (qp.maxUnitPrice) q = q.lte('normalized_price', qp.maxUnitPrice);
       if (!opts.showDemoData) q = q.eq('is_demo', false);
       const { data, error, count } = await q;
-      if (error) fail(error);
+      if (error) {
+        if (opts.showDemoData) return matchingDemoObservations(qp);
+        fail(error);
+      }
+      if ((!data || data.length === 0) && opts.showDemoData) return matchingDemoObservations(qp);
       return { items: (data ?? []).map(mapObservation), total: count ?? null, offset: qp.offset, limit: qp.limit };
     },
 

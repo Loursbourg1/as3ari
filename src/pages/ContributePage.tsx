@@ -580,7 +580,7 @@ export default function ContributePage() {
               disabled={gpsLocating}
               className="inline-flex items-center gap-1.5 font-semibold text-brand-700 hover:text-brand-800 disabled:opacity-50"
             >
-              <Navigation className={`size-3.5 ${gpsLocating ? 'animate-spin' : ''}`} />
+              {gpsLocating ? <span className="size-3.5 animate-pulse rounded bg-brand-700/25" /> : <Navigation className="size-3.5" />}
               {gpsLocating ? t('contribute.locating') : t('contribute.useMyLocation')}
             </button>
             {lat !== null && lng !== null && (
