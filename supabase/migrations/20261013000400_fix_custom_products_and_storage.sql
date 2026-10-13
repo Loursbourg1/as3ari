@@ -128,7 +128,7 @@ begin
         when p_unit in ('ml', 'l') then 'volume'::public.unit_dimension
         else 'count'::public.unit_dimension
       end,
-      0, 1000000, true
+      0.01, 1000000, true
     )
     on conflict (id) do update
       set is_active = true;
