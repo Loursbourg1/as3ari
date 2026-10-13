@@ -418,3 +418,9 @@ enabled = true
 enabled = true
 # The gateway rejects requests without a valid user JWT before the function runs.
 verify_jwt = true
+
+[functions.gemini-proxy]
+enabled = true
+# Must be false — browser CORS preflight (OPTIONS) never sends auth headers,
+# so JWT verification would block the preflight before CORS headers are returned.
+verify_jwt = false
