@@ -1,0 +1,214 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   As3ari design tokens. Practical, compact, light surfaces, restrained teal accent.
+   --------------------------------------------------------------------------- */
+@theme {
+  --font-sans: 'Inter Variable', 'Noto Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
+
+  --color-brand-50: #e9f8f6;
+  --color-brand-100: #ccefeb;
+  --color-brand-200: #9be0d9;
+  --color-brand-300: #5fc9c0;
+  --color-brand-400: #27afa5;
+  --color-brand-500: #0d978e;
+  --color-brand-600: #0a7d76;
+  --color-brand-700: #0a6560;
+  --color-brand-800: #0c514d;
+  --color-brand-900: #0c4341;
+
+  --color-ink: #141a21;
+  --color-ink-2: #3a4350;
+  --color-muted: #667080;
+  --color-line: #e5e8eb;
+  --color-line-strong: #cfd5db;
+  --color-canvas: #f4f5f6;
+  --color-surface: #ffffff;
+
+  --color-good: #11744a;
+  --color-good-bg: #e5f5ec;
+  --color-warn: #8a5300;
+  --color-warn-bg: #fff3dc;
+  --color-stale: #5f6875;
+  --color-stale-bg: #eceef1;
+  --color-danger: #b42318;
+  --color-danger-bg: #fdecea;
+  --color-demo: #6232c7;
+  --color-demo-bg: #f1ebff;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.07);
+  --shadow-float: 0 6px 20px rgb(16 24 40 / 0.16);
+  --shadow-sheet: 0 -6px 24px rgb(16 24 40 / 0.14);
+
+  --text-price: 1.375rem;
+  --text-price--line-height: 1.6rem;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-canvas text-ink antialiased;
+    font-feature-settings: 'tnum' 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+  button:not(:disabled),
+  [role='button'] {
+    cursor: pointer;
+  }
+}
+
+/* Numbers (prices, quantities) always render LTR, even inside RTL text. */
+.num {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Map markers (Leaflet divIcons — static markup only, no user text)
+   --------------------------------------------------------------------------- */
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: #eef0f1;
+}
+.leaflet-control-attribution {
+  font-size: 10px;
+  max-width: 60vw;
+}
+/* Pinch-zoom on phones; the zoom buttons would sit under the bottom sheet. */
+@media (max-width: 63.99rem) {
+  .leaflet-control-zoom {
+    display: none;
+  }
+}
+.as3-marker {
+  background: transparent;
+  border: 0;
+}
+.as3-pin {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transform: translate(-50%, 0);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  white-space: nowrap;
+  padding: 3px 7px;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--color-ink);
+  border: 1.5px solid var(--color-brand-500);
+  box-shadow: var(--shadow-card);
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 16px;
+  direction: ltr;
+}
+.as3-pin::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 8px;
+  height: 8px;
+  background: inherit;
+  border-right: inherit;
+  border-bottom: inherit;
+  transform: translateX(-50%) rotate(45deg);
+}
+.as3-pin small {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+.as3-pin.is-lowest {
+  background: var(--color-brand-600);
+  border-color: var(--color-brand-700);
+  color: #fff;
+}
+.as3-pin.is-lowest small {
+  color: var(--color-brand-100);
+}
+.as3-pin.is-aging {
+  border-color: #d39a3a;
+}
+.as3-pin.is-stale {
+  border-style: dashed;
+  border-color: var(--color-line-strong);
+  color: var(--color-stale);
+  background: #f7f8f9;
+}
+.as3-pin.is-selected {
+  transform: translate(-50%, 0) scale(1.12);
+  z-index: 1000;
+  box-shadow: 0 0 0 3px rgb(13 151 142 / 0.35), var(--shadow-float);
+}
+.as3-pin.is-demo {
+  outline: 1.5px dotted var(--color-demo);
+  outline-offset: 2px;
+}
+.as3-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--color-brand-500);
+  box-shadow: var(--shadow-card);
+}
+.as3-dot.is-muted {
+  border-color: #aab2bc;
+  width: 11px;
+  height: 11px;
+}
+.as3-dot.is-selected {
+  width: 20px;
+  height: 20px;
+  border-width: 5px;
+  box-shadow: 0 0 0 4px rgb(13 151 142 / 0.3);
+}
+.as3-dot.is-demo:not(.is-muted) {
+  border-color: var(--color-demo);
+}
+.as3-me {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 6px rgb(37 99 235 / 0.2);
+}
+
+/* Marker wrappers are zero-sized anchors; show keyboard focus on the visible pin/dot. */
+.as3-marker:focus {
+  outline: none;
+}
+.as3-marker:focus-visible .as3-pin,
+.as3-marker:focus-visible .as3-dot {
+  box-shadow: 0 0 0 3px var(--color-brand-500);
+}
