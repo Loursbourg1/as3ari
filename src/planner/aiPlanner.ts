@@ -242,7 +242,7 @@ Your task is to plan a balanced 7-day weekly meal plan (Day 1 to 7, each day hav
 RULES:
 1. ONLY pick recipe IDs from the AVAILABLE RECIPES list below. NEVER invent new IDs.
 2. Respect household size: ${householdSize} people.
-3. Weekly food budget target: ${budget ? `${budget} DZD` : 'Optimize for high affordability'}. Use the supplied recipe cost and nutrition data to make the plan responsive to this budget. Favor nutritious recipes with protein and fiber when their cost is comparable.
+3. Weekly food budget target: ${budget ? `${budget} DZD` : 'Optimize for high affordability'}. Use the supplied recipe cost and nutrition data to make the plan responsive to this budget. Favor nutritious recipes with protein and fiber when their cost is comparable. Aim for varied daily nutrition across the week instead of repeating one fixed combination.
 4. Prioritize recipes using available pantry items: ${pantryList}.
 5. STRICTLY obey dietary exclusions: ${exclusionsList}.
 6. Favor preferred ingredients: ${preferencesList}.

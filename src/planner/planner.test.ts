@@ -73,6 +73,16 @@ describe('scaling, aggregation and pantry subtraction', () => {
 });
 
 describe('missing and stale prices', () => {
+  it('uses valid reported prices even when their stored normalized value is missing', () => {
+    const observation = uniformObservations().find((o) => o.product_id === 'lentils')!;
+    observation.normalized_price = null;
+    observation.price = '140.00';
+    observation.quantity = '500';
+    observation.unit = 'g';
+    const p = prices([observation]);
+    expect(p.get('lentils')!.unitPrice).toBe('280.00');
+  });
+
   it('missing prices are unknown, never zero', () => {
     const p = prices(uniformObservations(1, '100.00', ['lentils']));
     expect(p.get('lentils')!.basis).toBe('missing');

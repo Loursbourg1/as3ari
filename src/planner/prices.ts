@@ -1,6 +1,6 @@
 import { comparableObservations, latestPerShop, medianPrice } from '../domain/comparison';
 import { freshnessOf, thresholdsFor } from '../domain/freshness';
-import { COMPARISON_UNIT } from '../domain/units';
+import { COMPARISON_UNIT, normalizeUnitPrice } from '../domain/units';
 import type { Category, ComparisonUnit, Ingredient, PriceObservation, Product } from '../domain/types';
 
 /**
@@ -53,7 +53,18 @@ export function estimateIngredientPrices(input: EstimatePricesInput): Map<string
       continue;
     }
     const t = thresholdsFor(product.category_id, categories);
-    const latest = [...latestPerShop(comparableObservations(product, observations)).values()].map((x) => x.latest);
+    // Some earlier submitted reports have a price and quantity but no stored
+    // normalized price. Normalize valid records here so they remain useful for
+    // planning instead of silently turning the estimate into zero.
+    const usableObservations = observations.flatMap((observation) => {
+      if (observation.product_id !== product.id) return [];
+      if (observation.normalized_price !== null) return [observation];
+      const normalized = normalizeUnitPrice(observation.price, observation.quantity, observation.unit, product.dimension);
+      return normalized.ok
+        ? [{ ...observation, normalized_price: normalized.value, comparison_unit: normalized.unit }]
+        : [];
+    });
+    const latest = [...latestPerShop(comparableObservations(product, usableObservations)).values()].map((x) => x.latest);
     const current = latest.filter((o) => freshnessOf(o.observed_on, today, t).state !== 'stale');
     const used = current.length > 0 ? current : latest;
     if (used.length === 0) {
