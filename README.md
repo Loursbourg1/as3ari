@@ -1,4 +1,4 @@
-# As3ari (أسعari)
+# As3ari (أسعاري)
 
 Community Grocery Price Intelligence and Nutrition Optimization Platform for Algeria.
 
