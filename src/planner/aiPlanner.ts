@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { Big } from '../domain/money';
 import type { Catalog } from '../domain/types';
 import type { IngredientPrice } from './prices';
@@ -52,6 +53,9 @@ export interface AiPlannerRequest extends PlannerInput {
   wilayaCode: number;
   catalog: Catalog;
   prices: Map<string, IngredientPrice>;
+  /** The Supabase client used to invoke the gemini-proxy edge function. */
+  supabaseClient?: SupabaseClient | null;
+  /** @deprecated Key is now in Supabase secrets; kept for interface compat. */
   apiKey?: string;
 }
 
@@ -146,7 +150,7 @@ export function recalculatePlan(
  * Algerian weekly meal plan, then recalculates and validates every single number.
  */
 export async function generateSmartMealPlan(req: AiPlannerRequest): Promise<AiMealPlanResult> {
-  const { householdSize, budget, pantry, excludedTags, excludedIngredients, preferredIngredients, foodPreferences, catalog, prices } = req;
+  const { householdSize, budget, pantry, excludedTags, excludedIngredients, preferredIngredients, foodPreferences, catalog, prices, supabaseClient } = req;
 
   // Filter recipes according to dietary hard constraints first
   const ingMap = new Map(catalog.ingredients.map((i) => [i.id, i]));
@@ -245,42 +249,44 @@ AVAILABLE RECIPES:
 ${recipeManifest}`;
 
   try {
-    const payload = JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-      generationConfig: {
-        temperature: 0.4,
-        maxOutputTokens: 1024,
-        responseMimeType: 'application/json',
-      },
-    });
-
-    // Call the Gemini proxy edge function — the API key is a server-side Supabase
-    // secret and is never exposed to the browser. Model fallback is handled server-side.
-    const proxyUrl = `${config.supabaseUrl}/functions/v1/gemini-proxy`;
-    let res = await fetch(proxyUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Pass the anon key so the edge function can validate the request origin
-        'apikey': config.supabaseAnonKey,
-      },
-      body: payload,
-    });
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      let errorDetail = `HTTP ${res.status}`;
-      try {
-        const errJson = JSON.parse(errText);
-        errorDetail = errJson.error?.message || errorDetail;
-      } catch {
-        errorDetail = errText || errorDetail;
+    // Use supabase.functions.invoke() — the SDK automatically attaches the anon key
+    // and any active session token. The API key never leaves Supabase secrets.
+    let data: unknown;
+    if (supabaseClient) {
+      const { data: invokeData, error: invokeError } = await supabaseClient.functions.invoke('gemini-proxy', {
+        body: {
+          contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 1024,
+            responseMimeType: 'application/json',
+          },
+        },
+      });
+      if (invokeError) throw new Error(`Gemini proxy: ${invokeError.message}`);
+      data = invokeData;
+    } else {
+      // Fallback: raw fetch (used in tests / offline demo mode)
+      const proxyUrl = `${config.supabaseUrl}/functions/v1/gemini-proxy`;
+      const res = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': config.supabaseAnonKey },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+          generationConfig: { temperature: 0.4, maxOutputTokens: 1024, responseMimeType: 'application/json' },
+        }),
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        let errorDetail = `HTTP ${res.status}`;
+        try { errorDetail = (JSON.parse(errText) as { error?: { message?: string } }).error?.message || errorDetail; } catch { errorDetail = errText || errorDetail; }
+        throw new Error(`Gemini proxy: ${errorDetail}`);
       }
-      throw new Error(`Gemini API: ${errorDetail}`);
+      data = await res.json();
     }
 
-    const data = await res.json();
-    const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const candidateText = (data as { candidates?: { content?: { parts?: { text?: string }[] } }[] })
+      ?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!candidateText) throw new Error('Empty response from AI');
 
     // Clean JSON if needed

@@ -21,6 +21,7 @@ import { estimateIngredientPrices, type IngredientPrice } from '../planner/price
 import { loadForm, saveForm, savePlan, type PlannerForm } from '../planner/storage';
 import { generateSmartMealPlan, recalculatePlan, type AiMealPlanResult } from '../planner/aiPlanner';
 import { config, getGeminiApiKey, setLocalGeminiKey } from '../config/env';
+import { supabase } from '../lib/supabase';
 import { useI18n } from '../i18n/I18nProvider';
 import { Badge, Button, ErrorState, Field, Notice, PageContainer, Select, Spinner, TextInput, cx } from '../components/ui';
 
@@ -74,8 +75,6 @@ export default function PlannerPage() {
         return q && ing && unitsForDimension(ing.dimension).includes(p.unit) ? [{ ...p, quantity: q }] : [];
       });
 
-      const currentKey = getGeminiApiKey();
-
       const r = await generateSmartMealPlan({
         householdSize: size,
         budget,
@@ -87,7 +86,7 @@ export default function PlannerPage() {
         wilayaCode,
         catalog: cat!,
         prices,
-        apiKey: currentKey,
+        supabaseClient: supabase,
       });
 
       setResult(r);
