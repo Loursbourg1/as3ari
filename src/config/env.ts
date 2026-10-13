@@ -2,8 +2,6 @@
  * Public, build-time configuration. Everything here ships to the browser —
  * never put service-role keys or other secrets in VITE_ variables.
  */
-declare const __GEMINI_API_KEY__: string | undefined;
-
 // Direct static access is required for Vite production AST replacement
 const supabaseUrl =
   (import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL || '').trim();
@@ -17,47 +15,14 @@ const recaptchaSiteKey =
 const rawDemo = (import.meta.env.VITE_SHOW_DEMO_DATA ?? import.meta.env.DEMO_DATA ?? import.meta.env.SHOW_DEMO_DATA ?? 'true');
 const rawRequireEmail = (import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION ?? import.meta.env.REQUIRE_EMAIL_VERIFICATION ?? 'false');
 
-export function getGeminiApiKey(): string {
-  const envKey = (
-    (typeof __GEMINI_API_KEY__ !== 'undefined' ? __GEMINI_API_KEY__ : '') ||
-    (import.meta.env.VITE_GEMINI_API_KEY as string | undefined) ||
-    (import.meta.env.GEMINI_API_KEY as string | undefined) ||
-    (import.meta.env.Gemini as string | undefined) ||
-    (import.meta.env.VITE_Gemini as string | undefined) ||
-    (import.meta.env.GEMINI as string | undefined) ||
-    ''
-  ).trim();
-  if (envKey) return envKey;
-  try {
-    return (localStorage.getItem('as3ari.gemini_key') || '').trim();
-  } catch {
-    return '';
-  }
-}
-
-export function setLocalGeminiKey(key: string): void {
-  try {
-    if (key.trim()) {
-      localStorage.setItem('as3ari.gemini_key', key.trim());
-    } else {
-      localStorage.removeItem('as3ari.gemini_key');
-    }
-  } catch {
-    // Ignore storage errors in restricted contexts
-  }
-}
-
 export const config = {
   supabaseUrl,
   supabaseAnonKey,
   recaptchaSiteKey,
-  get geminiApiKey(): string {
-    return getGeminiApiKey();
-  },
   get hasGeminiAi(): boolean {
-    // The Gemini key lives in Supabase secrets (server-side). AI is available
-    // whenever Supabase is configured; the proxy returns 503 if not set.
-    return Boolean(supabaseUrl && supabaseAnonKey);
+    // Gemini is available through the same-origin Vercel function in deployments.
+    // The secret is never included in the browser bundle.
+    return !import.meta.env.DEV;
   },
   /** Without Supabase credentials the app runs on bundled, clearly-labelled synthetic data. */
   isDemoMode: !supabaseUrl || !supabaseAnonKey,

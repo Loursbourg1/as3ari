@@ -37,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // access while Google's model-list endpoint is temporarily unavailable).
   const models = [...new Set([...PREFERRED_MODELS, ...listedModels])];
   let lastStatus = 503;
-  let lastDetail = 'No Gemini model could be reached';
+  let lastDetail = 'Gemini is temporarily unavailable';
 
   for (const model of models) {
     let upstream: Response;
@@ -48,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         body: raw,
       });
     } catch (err: unknown) {
-      lastDetail = String(err).slice(0, 300);
+      lastDetail = 'Gemini is temporarily unavailable';
       continue;
     }
 
@@ -59,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     lastStatus = upstream.status;
-    lastDetail = text.slice(0, 300);
+    lastDetail = 'Gemini is temporarily unavailable';
     // A model can exist but be unavailable to this key or temporarily busy.
     // Try another candidate for model/availability/quota errors only.
     if (![400, 403, 404, 429, 503].includes(upstream.status)) break;

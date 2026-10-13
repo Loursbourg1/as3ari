@@ -3,7 +3,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { Big } from '../domain/money';
 import type { Catalog } from '../domain/types';
 import type { IngredientPrice } from './prices';
-import { config } from '../config/env';
 import {
   generateMealPlan,
   type MealPlanResult,
@@ -185,9 +184,9 @@ export async function generateSmartMealPlan(req: AiPlannerRequest): Promise<AiMe
     return recalculatePlan(cached.meals, householdSize, budget, pantry, catalog, prices, cached.explanation, true);
   }
 
-  // If Supabase is not configured (pure offline demo mode), run the deterministic planner.
-  // In production the proxy edge function supplies the API key from Supabase secrets.
-  if (!config.supabaseUrl || !config.supabaseAnonKey) {
+  // The deployed app calls the same-origin Vercel proxy, which keeps the API key
+  // server-side. Keep local development fully offline unless explicitly configured.
+  if (import.meta.env.DEV) {
     const deterministic = generateMealPlan(
       { householdSize, budget, pantry, excludedTags, excludedIngredients, preferredIngredients },
       catalog,
@@ -256,7 +255,7 @@ ${recipeManifest}`;
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: 1024, responseMimeType: 'application/json' },
+        generationConfig: { temperature: 0.3, maxOutputTokens: 2048, responseMimeType: 'application/json' },
       }),
     });
     if (!proxyRes.ok) {
@@ -265,9 +264,15 @@ ${recipeManifest}`;
     }
     data = await proxyRes.json();
 
-    const candidateText = (data as { candidates?: { content?: { parts?: { text?: string }[] } }[] })
+    const response = data as {
+      candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+    };
+    const candidateText = response
       ?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!candidateText) throw new Error('Empty response from AI');
+    if (response.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
+      throw new Error('Gemini response was incomplete');
+    }
 
     // Clean JSON if needed
     const cleanedJson = candidateText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
@@ -313,7 +318,8 @@ ${recipeManifest}`;
       true,
     );
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
+    // Do not display upstream response bodies or implementation details to users.
+    const errorMsg = 'Gemini is temporarily unavailable. The standard budget plan was used instead.';
     // Deterministic fallback planner if Gemini fails or quota exhausted
     const fallback = generateMealPlan(
       { householdSize, budget, pantry, excludedTags, excludedIngredients, preferredIngredients },

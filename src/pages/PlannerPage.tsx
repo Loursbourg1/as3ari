@@ -20,7 +20,7 @@ import type { Catalog, DietTag, MealSlot, UnitCode } from '../domain/types';
 import { estimateIngredientPrices, type IngredientPrice } from '../planner/prices';
 import { loadForm, saveForm, savePlan, type PlannerForm } from '../planner/storage';
 import { generateSmartMealPlan, recalculatePlan, type AiMealPlanResult } from '../planner/aiPlanner';
-import { config, getGeminiApiKey, setLocalGeminiKey } from '../config/env';
+import { config } from '../config/env';
 import { supabase } from '../lib/supabase';
 import { useI18n } from '../i18n/I18nProvider';
 import { Badge, Button, ErrorState, Field, Notice, PageContainer, Select, Spinner, TextInput, cx } from '../components/ui';
@@ -38,9 +38,6 @@ export default function PlannerPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [openMeal, setOpenMeal] = useState<string | null>(null);
   const [replacingSlot, setReplacingSlot] = useState<{ day: number; slot: MealSlot } | null>(null);
-  const [apiKeyInput, setApiKeyInput] = useState(() => getGeminiApiKey());
-  const [showKeyConfig, setShowKeyConfig] = useState(false);
-  const [keySaved, setKeySaved] = useState(false);
 
   const cat = catalog.data;
   if (!cat) return catalog.status === 'error' ? <ErrorState onRetry={catalog.reload} /> : <Spinner />;
@@ -142,71 +139,15 @@ export default function PlannerPage() {
           <p className="mt-1 text-sm text-ink-2">{t('plan.intro')}</p>
         </div>
         <div className="flex items-center gap-2">
-          {config.hasGeminiAi ? (
-            <button
-              type="button"
-              onClick={() => setShowKeyConfig((s) => !s)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-brand-500/30 bg-brand-50/90 px-3 py-1 text-xs font-bold text-brand-700 hover:bg-brand-100 transition-colors"
-            >
+          {config.hasGeminiAi && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-500/30 bg-brand-50/90 px-3 py-1 text-xs font-bold text-brand-700">
               <Sparkles className="size-3.5 text-brand-600 animate-pulse" />
               {t('plan.geminiActive')}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowKeyConfig((s) => !s)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-xs font-semibold text-ink-2 hover:bg-canvas transition-colors shadow-xs"
-            >
-              <Sparkles className="size-3.5 text-muted" />
-              {t('plan.geminiEnterKey')}
-            </button>
+            </span>
           )}
         </div>
       </div>
 
-      {showKeyConfig && (
-        <div className="mt-3 rounded-2xl border border-brand-200 bg-brand-50/60 p-4 space-y-3 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-ink flex items-center gap-1.5">
-              <Sparkles className="size-4 text-brand-600" />
-              {t('plan.geminiEnterKey')}
-            </span>
-            <button
-              type="button"
-              onClick={() => setShowKeyConfig(false)}
-              className="text-muted hover:text-ink text-xs font-bold"
-            >
-              ✕
-            </button>
-          </div>
-          <p className="text-xs text-ink-2">{t('plan.geminiKeyHint')}</p>
-          <div className="flex gap-2">
-            <TextInput
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
-              placeholder={t('plan.geminiKeyPlaceholder')}
-              className="text-xs font-mono"
-            />
-            <Button
-              variant="primary"
-              onClick={() => {
-                setLocalGeminiKey(apiKeyInput);
-                setKeySaved(true);
-                setTimeout(() => setKeySaved(false), 3000);
-              }}
-              className="shrink-0 text-xs"
-            >
-              {t('plan.geminiSaveKey')}
-            </Button>
-          </div>
-          {keySaved && (
-            <p className="text-xs font-bold text-good flex items-center gap-1">
-              <CheckCircle2 className="size-3.5" />
-              {t('plan.geminiKeySaved')}
-            </p>
-          )}
-        </div>
-      )}
 
       <form
         className="mt-4 space-y-4 rounded-2xl border border-line bg-surface p-4 shadow-card"
@@ -408,9 +349,7 @@ export default function PlannerPage() {
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" variant="primary" disabled={state === 'busy'} className="rounded-xl px-5 py-2.5 font-bold shadow-sm">
             {state === 'busy' ? (
-              <span className="inline-flex items-center gap-2">
-                <Spinner /> {t('plan.generating')}
-              </span>
+              <span>{t('plan.generating')}</span>
             ) : (
               <span className="inline-flex items-center gap-2">
                 <Sparkles className="size-4" /> {t('plan.generate')}
@@ -422,6 +361,8 @@ export default function PlannerPage() {
       </form>
 
       {state === 'error' && <ErrorState onRetry={() => void generate()} />}
+
+      {state === 'busy' && <PlanLoadingSkeleton />}
 
       {result && !result.ok && (
         <div className="mt-4">
@@ -451,6 +392,29 @@ export default function PlannerPage() {
         <p className="mt-2 text-xs text-muted">{t('plan.notMedical')}</p>
       </details>
     </PageContainer>
+  );
+}
+
+function PlanLoadingSkeleton() {
+  return (
+    <section className="mt-6 space-y-4 animate-pulse" aria-label="Generating meal plan" aria-busy="true">
+      <div className="rounded-2xl border border-line bg-surface p-5 shadow-card">
+        <div className="h-3 w-32 rounded bg-canvas" />
+        <div className="mt-3 h-10 w-48 rounded-lg bg-canvas" />
+        <div className="mt-5 h-11 rounded-xl bg-canvas" />
+      </div>
+      <div className="grid gap-2.5 sm:grid-cols-2">
+        {Array.from({ length: 6 }, (_, index) => (
+          <div key={index} className="overflow-hidden rounded-2xl border border-line bg-surface shadow-xs">
+            <div className="h-9 bg-canvas" />
+            <div className="space-y-3 p-3.5">
+              <div className="h-4 w-4/5 rounded bg-canvas" />
+              <div className="h-4 w-3/5 rounded bg-canvas" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
