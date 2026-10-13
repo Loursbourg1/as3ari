@@ -235,11 +235,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { ok: true };
       },
       async signOut() {
-        if (supabase) {
-          await supabase.auth.signOut();
-        } else {
+        try {
+          if (supabase) await supabase.auth.signOut();
+        } finally {
           writeJson(LOCAL_AUTH_KEY, null);
           setSession(null);
+          window.location.replace('/');
         }
       },
     };

@@ -247,7 +247,7 @@ function SidebarDrawer({
                 type="button"
                 onClick={() => {
                   onClose();
-                  auth.signOut();
+                  void auth.signOut();
                 }}
                 className="font-semibold text-danger hover:underline"
               >
