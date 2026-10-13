@@ -7,12 +7,12 @@ Community Grocery Price Intelligence and Nutrition Optimization Platform for Alg
 Algerian households, particularly large working families with fixed incomes, face sharp market volatility and price fragmentation across retail shops and open-air markets. 
 
 1. **Information Asymmetry**: Identical staples (vegetables, poultry, oil, legumes) often vary by 20% to 50% between markets located just a few kilometers apart.
-2. **Budget Exhaustion**: Families often discover the true cost of their weekly grocery basket at the cash register, leaving them vulnerable to running out of money before the end of the month.
+2. **Budget Exhaustion**: Families often discover the true cost of their weekly groceries after it's too late, leaving them vulnerable to running out of money before the end of the month.
 3. **Nutritional Compromise**: Sticking to a strict budget usually forces households into cheap, low-nutrient carbohydrates, sacrificing protein and essential micronutrients.
 
 ## The Solution
 
-As3ari eliminates guesswork by turning collective community observations into verifiable price intelligence and actionable meal plans:
+As3ari turns collective community observations into verifiable price intelligence and actionable meal plans:
 
 - **Crowdsourced Price Verification**: Shoppers report in-store shelf prices on the ground. A corroboration engine cross-checks submissions across multiple independent users within a geographic radius before public confirmation.
 - **Budget-First Meal Optimization**: Rather than giving generic recipes, our engine builds complete 7-day meal plans calibrated to local real-time prices. Families input their exact budget and household size to receive balanced, culturally authentic menus that never exceed their spending limits.
