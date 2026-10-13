@@ -59,8 +59,12 @@ export default function PlannerPage() {
     setState('busy');
     try {
       const pricing = cat!.ingredients.filter((i) => i.pricing_product_id).map((i) => i.pricing_product_id!);
-      const obs = await repo.listObservations({ wilayaCode, productIds: pricing, since: addDays(today, -365), limit: 2000, offset: 0 });
-      const prices = estimateIngredientPrices({ ingredients: cat!.ingredients, products: cat!.products, categories: cat!.categories, observations: obs.items, today });
+      // Fetch observations for all wilayas — the planner needs nation-wide prices,
+      // not just the user's selected area. Demo observations are excluded when demo
+      // data is disabled so Gemini only works with real community prices.
+      const obs = await repo.listObservations({ productIds: pricing, since: addDays(today, -365), limit: 2000, offset: 0 });
+      const filteredObs = config.showDemoData ? obs.items : obs.items.filter((o) => !o.is_demo);
+      const prices = estimateIngredientPrices({ ingredients: cat!.ingredients, products: cat!.products, categories: cat!.categories, observations: filteredObs, today });
       setCachedPrices(prices);
 
       // Ignore pantry rows with an invalid or empty quantity rather than guessing.
