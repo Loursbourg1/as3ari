@@ -1,11 +1,9 @@
 # As3ari (أسعاري)
-
-Grocery prices on the ground in Algeria, then a week of meals that actually fits the cash you have.
-
-The same oil, chicken, or vegetables can cost 20–50% more two markets down the road. Households on a fixed wage find that out after the cart is full, run short before the month ends, and fill the gap with cheap starch instead of protein.
-
-Shoppers log the shelf price where they stand. Moderators check each report before it is public. From those prices As3ari builds a 7-day menu for the household size and DZD cap you set, then one shopping list with a running total — so you spend the plan, not the leftover at the till.
-
+Never overpay for basic food.
+The same groceries can cost different amounts at different shops. As3ari helps people discover those differences before they spend their money.
+As3ari is a community-driven grocery price platform built for Algeria. People can discover local prices and contribute price reports, turning information that usually stays with one shopper into something the whole community can use. Ratings, report verification, and transparency help people judge how trustworthy that information is.
+But finding cheaper groceries is only the beginning. As3ari aims to help households plan affordable, nutritious weekly meals, make better use of limited budgets, and discover unexpected sources of fresh produce from neighborhood markets and roadside sellers.
+The vision is simple: give people better information, and give them more control over their money.
 ## Table of contents
 
 - [Quick start](#quick-start)
