@@ -8,6 +8,7 @@ The vision is simple: give people better information, and give them more control
 
 - [Quick start](#quick-start)
 - [What’s included](#whats-included)
+- [Using As3ari](#using-as3ari)
 - [Scripts](#scripts)
 - [Stack](#stack)
 - [Moderation](#moderation)
@@ -41,6 +42,18 @@ as3ari/
 ├── docs/                Deployment, data import, security
 └── public/              Static assets
 ```
+
+## Using As3ari
+
+### For shoppers
+
+Choose an area, then search for a food or browse the categories. Open a price report to see its reported price, package size, date, and location. Use **Take me there** to open directions in Google Maps, or **Copy location** to share the location. Coverage depends on reports available in each area; prices are community observations, not official shop prices. Demo-labelled prices and locations are synthetic.
+
+Sign in to submit a price report. Add the product, price, package size, date, and where you saw it, then submit it for review. A report stays private until a moderator approves it. You can also rate reports and use the meal planner to create a weekly plan from your household size, budget, pantry items, and food preferences.
+
+### For moderators
+
+Moderators must be granted the `moderator` or `admin` role in `user_roles`. Sign in and open **Moderation** (at `/moderate`) to review pending reports. Approve a valid report to make it public, or remove a report that should not be published. Only approved reports appear in public price results.
 
 ## Scripts
 
