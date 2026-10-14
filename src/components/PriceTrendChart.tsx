@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router';
 import {
   TrendingUp,
   TrendingDown,
   Minus,
   Info,
   Layers,
+  PlusCircle,
 } from 'lucide-react';
 import type { Catalog, PriceObservation, Product } from '../domain/types';
 import { useI18n } from '../i18n/I18nProvider';
@@ -28,38 +30,6 @@ interface Point {
   maxPrice: number;
   count: number;
 }
-
-/** Realistic baseline benchmark price levels and historical curves in DZD across Algeria */
-const PRODUCT_BENCHMARKS: Record<string, { basePrice: number; trend: number[] }> = {
-  potatoes: { basePrice: 90, trend: [82, 85, 94, 90] },
-  onions: { basePrice: 70, trend: [65, 72, 75, 70] },
-  tomatoes: { basePrice: 125, trend: [110, 140, 130, 125] },
-  carrots: { basePrice: 100, trend: [95, 98, 102, 100] },
-  zucchini: { basePrice: 110, trend: [100, 115, 112, 110] },
-  'green-peppers': { basePrice: 160, trend: [150, 175, 168, 160] },
-  garlic: { basePrice: 900, trend: [880, 920, 910, 900] },
-  coriander: { basePrice: 40, trend: [35, 45, 40, 40] },
-  lentils: { basePrice: 280, trend: [275, 280, 285, 280] },
-  chickpeas: { basePrice: 380, trend: [370, 375, 385, 380] },
-  'white-beans': { basePrice: 350, trend: [340, 350, 360, 350] },
-  rice: { basePrice: 220, trend: [215, 220, 225, 220] },
-  spaghetti: { basePrice: 180, trend: [180, 180, 185, 180] },
-  couscous: { basePrice: 150, trend: [145, 150, 155, 150] },
-  'semolina-fine': { basePrice: 110, trend: [110, 110, 115, 110] },
-  flour: { basePrice: 75, trend: [75, 75, 75, 75] },
-  frik: { basePrice: 450, trend: [430, 450, 460, 450] },
-  'tomato-paste': { basePrice: 600, trend: [580, 600, 610, 600] },
-  'vegetable-oil': { basePrice: 260, trend: [260, 260, 265, 260] },
-  sugar: { basePrice: 110, trend: [110, 110, 110, 110] },
-  eggs: { basePrice: 22, trend: [20, 21, 24, 22] },
-  'milk-pasteurised-bag': { basePrice: 25, trend: [25, 25, 25, 25] },
-  'milk-uht': { basePrice: 150, trend: [145, 150, 155, 150] },
-  'chicken-whole': { basePrice: 450, trend: [420, 470, 460, 450] },
-  lamb: { basePrice: 2400, trend: [2300, 2450, 2420, 2400] },
-  'beef-minced': { basePrice: 2200, trend: [2150, 2250, 2220, 2200] },
-  sardines: { basePrice: 700, trend: [600, 850, 750, 700] },
-  baguette: { basePrice: 10, trend: [10, 10, 10, 10] },
-};
 
 export function PriceTrendChart({
   wilayaCode,
@@ -137,7 +107,7 @@ export function PriceTrendChart({
     if (!activeProduct) return [];
 
     // If actual observations exist for this product, group them
-    if (productObservations.length >= 2) {
+    if (productObservations.length >= 1) {
       if (timeframe === 'weekly') {
         const weekMap = new Map<string, { sum: number; count: number; min: number; max: number; latestDate: string }>();
 
@@ -162,7 +132,7 @@ export function PriceTrendChart({
         }
 
         const sortedKeys = Array.from(weekMap.keys()).sort();
-        if (sortedKeys.length >= 2) {
+        if (sortedKeys.length >= 1) {
           return sortedKeys.slice(-6).map((key, idx) => {
             const g = weekMap.get(key)!;
             const isLatest = idx === sortedKeys.length - 1;
@@ -193,7 +163,7 @@ export function PriceTrendChart({
           }
         }
         const sortedDates = Array.from(dayMap.keys()).sort().slice(-7);
-        if (sortedDates.length >= 2) {
+        if (sortedDates.length >= 1) {
           return sortedDates.map((date) => {
             const g = dayMap.get(date)!;
             return {
@@ -209,17 +179,8 @@ export function PriceTrendChart({
       }
     }
 
-    // Baseline fallback: strictly specific to this product's market benchmark
-    const bench = PRODUCT_BENCHMARKS[activeProduct.id];
-    const base = bench ? bench.basePrice : Number(activeProduct.min_unit_price || 100);
-    const trendValues = bench ? bench.trend : [Math.round(base * 0.92), Math.round(base * 1.05), Math.round(base * 0.98), Math.round(base)];
-
-    return [
-      { label: 'W-3', dateKey: '2026-09-21', avgPrice: trendValues[0]!, minPrice: Math.round(trendValues[0]! * 0.95), maxPrice: Math.round(trendValues[0]! * 1.03), count: 3 },
-      { label: 'W-2', dateKey: '2026-09-28', avgPrice: trendValues[1]!, minPrice: Math.round(trendValues[1]! * 0.96), maxPrice: Math.round(trendValues[1]! * 1.04), count: 5 },
-      { label: 'W-1', dateKey: '2026-10-05', avgPrice: trendValues[2]!, minPrice: Math.round(trendValues[2]! * 0.97), maxPrice: Math.round(trendValues[2]! * 1.02), count: 7 },
-      { label: 'This Wk', dateKey: '2026-10-12', avgPrice: trendValues[3]!, minPrice: Math.round(trendValues[3]! * 0.96), maxPrice: Math.round(trendValues[3]! * 1.05), count: 9 },
-    ];
+    // Only realistic data: return empty array when there are no approved observations
+    return [];
   }, [activeProduct, productObservations, timeframe, locale]);
 
   // Statistics calculation
@@ -469,123 +430,144 @@ export function PriceTrendChart({
         </div>
       </div>
 
-      {/* SVG Interactive Light Fluctuation Chart */}
-      <div className="relative mt-4 rounded-xl border border-line bg-canvas p-3 pt-5 text-ink overflow-hidden">
-        <svg
-          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          className="w-full h-44 sm:h-52 overflow-visible select-none"
-        >
-          <defs>
-            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#0d978e" stopOpacity="0.22" />
-              <stop offset="100%" stopColor="#0d978e" stopOpacity="0.01" />
-            </linearGradient>
-          </defs>
-
-          {/* Horizontal grid guidelines */}
-          {[0.2, 0.5, 0.8].map((level) => {
-            const y = paddingY + level * (svgHeight - paddingY * 2);
-            const val = Math.round(maxVal - level * range);
-            return (
-              <g key={level}>
-                <line
-                  x1={paddingX}
-                  y1={y}
-                  x2={svgWidth - paddingX}
-                  y2={y}
-                  stroke="#e2e8f0"
-                  strokeDasharray="4 4"
-                  strokeWidth="1"
-                />
-                <text
-                  x={paddingX - 8}
-                  y={y + 3}
-                  textAnchor="end"
-                  fontSize="10"
-                  fill="#94a3b8"
-                  className="font-mono font-medium"
-                >
-                  {val}
-                </text>
-              </g>
-            );
-          })}
-
-          {/* Area gradient under the line */}
-          {areaPath && <path d={areaPath} fill="url(#chartGradient)" />}
-
-          {/* Clean brand teal line */}
-          {linePath && (
-            <path
-              d={linePath}
-              fill="none"
-              stroke="#0d978e"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-
-          {/* Data Points */}
-          {points.map((p, idx) => {
-            const cx = getX(idx);
-            const cy = getY(p.avgPrice);
-            const isHovered = hoveredPoint?.dateKey === p.dateKey;
-            return (
-              <g
-                key={p.dateKey + idx}
-                className="cursor-pointer"
-                onMouseEnter={() => setHoveredPoint(p)}
-                onClick={() => setHoveredPoint(p)}
-              >
-                {/* Active circle */}
-                <circle
-                  cx={cx}
-                  cy={cy}
-                  r={isHovered ? 6 : 4}
-                  fill="#ffffff"
-                  stroke="#0d978e"
-                  strokeWidth={isHovered ? 3 : 2}
-                  className="transition-all"
-                />
-
-                {/* X axis labels */}
-                <text
-                  x={cx}
-                  y={svgHeight - 10}
-                  textAnchor="middle"
-                  fontSize="11"
-                  fill="#64748b"
-                  fontWeight="600"
-                >
-                  {p.label}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-
-        {/* Hover / Touch Tooltip Card */}
-        {hoveredPoint && (
-          <div className="absolute top-3 end-3 rounded-xl border border-line bg-surface px-3 py-2 text-xs shadow-card backdrop-blur animate-in fade-in">
-            <div className="flex items-center justify-between gap-3 text-ink-2">
-              <span className="font-bold text-ink">{hoveredPoint.label}</span>
-              <span className="text-[10px] text-muted">
-                {formatDate(hoveredPoint.dateKey, locale)}
-              </span>
-            </div>
-            <div className="mt-1 flex items-baseline gap-1">
-              <span className="num text-base font-black text-brand-700">
-                {hoveredPoint.avgPrice} DZD
-              </span>
-              <span className="text-[10px] text-muted">{unitComparison}</span>
-            </div>
-            <div className="mt-0.5 text-[10px] text-muted">
-              {hoveredPoint.minPrice} - {hoveredPoint.maxPrice} DZD · {hoveredPoint.count} {t('trends.reportsUnit')}
-            </div>
+      {/* SVG Interactive Light Fluctuation Chart or Clean No-Data Empty State */}
+      {points.length === 0 ? (
+        <div className="mt-4 flex flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-canvas/70 px-4 py-10 text-center">
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+            <TrendingUp className="size-6 opacity-60" />
           </div>
-        )}
-      </div>
+          <p className="mt-3 text-sm font-bold text-ink">
+            {t('trends.noData', { area: wilayaName })}
+          </p>
+          <p className="mt-1 text-xs text-muted max-w-sm">
+            {t('trends.note', { area: wilayaName })}
+          </p>
+          <Link
+            to={`/contribute?product=${activeProduct?.id ?? ''}`}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-brand-700 transition-colors"
+          >
+            <PlusCircle className="size-4" />
+            <span>{t('trends.noDataAction')}</span>
+          </Link>
+        </div>
+      ) : (
+        <div className="relative mt-4 rounded-xl border border-line bg-canvas p-3 pt-5 text-ink overflow-hidden">
+          <svg
+            viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+            className="w-full h-44 sm:h-52 overflow-visible select-none"
+          >
+            <defs>
+              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#0d978e" stopOpacity="0.22" />
+                <stop offset="100%" stopColor="#0d978e" stopOpacity="0.01" />
+              </linearGradient>
+            </defs>
+
+            {/* Horizontal grid guidelines */}
+            {[0.2, 0.5, 0.8].map((level) => {
+              const y = paddingY + level * (svgHeight - paddingY * 2);
+              const val = Math.round(maxVal - level * range);
+              return (
+                <g key={level}>
+                  <line
+                    x1={paddingX}
+                    y1={y}
+                    x2={svgWidth - paddingX}
+                    y2={y}
+                    stroke="#e2e8f0"
+                    strokeDasharray="4 4"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x={paddingX - 8}
+                    y={y + 3}
+                    textAnchor="end"
+                    fontSize="10"
+                    fill="#94a3b8"
+                    className="font-mono font-medium"
+                  >
+                    {val}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Area gradient under the line */}
+            {areaPath && <path d={areaPath} fill="url(#chartGradient)" />}
+
+            {/* Clean brand teal line */}
+            {linePath && (
+              <path
+                d={linePath}
+                fill="none"
+                stroke="#0d978e"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )}
+
+            {/* Data Points */}
+            {points.map((p, idx) => {
+              const cx = getX(idx);
+              const cy = getY(p.avgPrice);
+              const isHovered = hoveredPoint?.dateKey === p.dateKey;
+              return (
+                <g
+                  key={p.dateKey + idx}
+                  className="cursor-pointer"
+                  onMouseEnter={() => setHoveredPoint(p)}
+                  onClick={() => setHoveredPoint(p)}
+                >
+                  {/* Active circle */}
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={isHovered ? 6 : 4}
+                    fill="#ffffff"
+                    stroke="#0d978e"
+                    strokeWidth={isHovered ? 3 : 2}
+                    className="transition-all"
+                  />
+
+                  {/* X axis labels */}
+                  <text
+                    x={cx}
+                    y={svgHeight - 10}
+                    textAnchor="middle"
+                    fontSize="11"
+                    fill="#64748b"
+                    fontWeight="600"
+                  >
+                    {p.label}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Hover / Touch Tooltip Card */}
+          {hoveredPoint && (
+            <div className="absolute top-3 end-3 rounded-xl border border-line bg-surface px-3 py-2 text-xs shadow-card backdrop-blur animate-in fade-in">
+              <div className="flex items-center justify-between gap-3 text-ink-2">
+                <span className="font-bold text-ink">{hoveredPoint.label}</span>
+                <span className="text-[10px] text-muted">
+                  {formatDate(hoveredPoint.dateKey, locale)}
+                </span>
+              </div>
+              <div className="mt-1 flex items-baseline gap-1">
+                <span className="num text-base font-black text-brand-700">
+                  {hoveredPoint.avgPrice} DZD
+                </span>
+                <span className="text-[10px] text-muted">{unitComparison}</span>
+              </div>
+              <div className="mt-0.5 text-[10px] text-muted">
+                {hoveredPoint.minPrice} - {hoveredPoint.maxPrice} DZD · {hoveredPoint.count} {t('trends.reportsUnit')}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Context note */}
       <div className="mt-3 flex items-start gap-2 rounded-xl bg-canvas p-3 text-xs text-muted border border-line">

@@ -453,8 +453,11 @@ export const en = {
   'plan.chooseReplacement': 'Choose replacement dish',
   'plan.foodPreferences': 'Dietary Notes & Preferences',
   'plan.foodPreferencesPlaceholder': 'e.g. Traditional Algerian recipes, prioritize chicken or lentils…',
+  'feed.allAlgeria': 'All Algeria',
   'trends.allCategoriesOverview': 'Category Market Overview',
   'trends.viewProduct': 'View trend',
+  'trends.noData': 'No approved price reports found for this product in {area} yet.',
+  'trends.noDataAction': 'Report a price now to start this trend',
   'nav.terms': 'Terms of Service',
   'terms.title': 'Terms of Service',
   'terms.lastUpdated': 'Last updated: October 2026',
@@ -475,7 +478,7 @@ export const en = {
   'terms.section7Body': 'As3ari is provided "as is" without warranty of any kind. We are not liable for any losses arising from reliance on price data or AI-generated meal plans.',
   'terms.section8Title': '8. Changes to These Terms',
   'terms.section8Body': 'We may update these terms at any time. Continued use of the platform after changes are posted constitutes acceptance of the new terms.',
-  'terms.contact': 'Questions? Contact us at: support@as3ari.app',
+  'terms.contact': 'Questions? Contact us at: contact.as3ari@gmail.com',
 } as const;
 
 export type MessageKey = keyof typeof en;

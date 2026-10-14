@@ -27,6 +27,9 @@ export function Logo() {
       <span className="text-[17px] sm:text-[19px] font-extrabold tracking-tight text-ink hidden min-[360px]:inline">
         As<span className="text-brand-600">3</span>ari
       </span>
+      <span className="rounded-full bg-brand-50 px-1.5 py-0.2 text-[10px] font-bold text-brand-700 uppercase tracking-wider hidden min-[400px]:inline">
+        Beta
+      </span>
     </Link>
   );
 }
@@ -263,6 +266,11 @@ function SidebarDrawer({
               {t('nav.signIn')}
             </Link>
           )}
+
+          {/* Trademark & Beta Notice */}
+          <div className="pt-2 text-[11px] text-muted text-center border-t border-line/60">
+            <span>© As3ari Beta · Fares Nabil Damene</span>
+          </div>
         </div>
       </div>
     </div>

@@ -454,8 +454,11 @@ export const ar: Record<MessageKey, string> = {
   'plan.chooseReplacement': 'اختر طبقاً بديلاً',
   'plan.foodPreferences': 'ملاحظات وتفضيلات غذائية',
   'plan.foodPreferencesPlaceholder': 'مثال: أطباق تقليدية جزائرية، تفضيل الدجاج أو العدس...',
+  'feed.allAlgeria': 'كل الجزائر',
   'trends.allCategoriesOverview': 'نظرة عامة على السوق حسب الفئة',
   'trends.viewProduct': 'عرض المؤشر',
+  'trends.noData': 'لا توجد تقارير أسعار معتمدة لهذا المنتج في {area} حتى الآن.',
+  'trends.noDataAction': 'أبلغ عن سعر الآن لبدء تتبع هذا المنتج',
   'nav.terms': 'شروط الخدمة',
   'terms.title': 'شروط الخدمة',
   'terms.lastUpdated': 'آخر تحديث: أكتوبر 2026',
@@ -476,5 +479,5 @@ export const ar: Record<MessageKey, string> = {
   'terms.section7Body': 'تُقدَّم أسعاري "كما هي" دون أي ضمان. لسنا مسؤولين عن أي خسائر ناجمة عن الاعتماد على بيانات الأسعار أو خطط الوجبات المُولَّدة بالذكاء الاصطناعي.',
   'terms.section8Title': '8. التغييرات على هذه الشروط',
   'terms.section8Body': 'قد نُحدِّث هذه الشروط في أي وقت. استمرار استخدام المنصة بعد نشر التغييرات يُعدّ قبولاً للشروط الجديدة.',
-  'terms.contact': 'أسئلة؟ تواصل معنا على: support@as3ari.app',
+  'terms.contact': 'أسئلة؟ تواصل معنا على: contact.as3ari@gmail.com',
 };

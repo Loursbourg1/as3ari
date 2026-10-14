@@ -62,6 +62,6 @@ React 19, TypeScript, Vite, Tailwind. Supabase (Postgres, Auth, RLS). Optional G
 
 Community reports are stored as `pending` until an `admin` or `moderator` in `user_roles` reviews them at `/moderate`. Only `approved` prices are public.
 
-## License
+## License & Ownership
 
-Private project. All rights reserved.
+Private project (Beta). All rights reserved. Owned by Fares Nabil Damene.

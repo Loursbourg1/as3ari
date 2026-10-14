@@ -42,6 +42,7 @@ export default function FeedPage() {
   const cat = catalog.data;
 
   // Search & Filter state
+  const [isNational, setIsNational] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedCommune, setSelectedCommune] = useState<string>('all');
@@ -92,8 +93,8 @@ export default function FeedPage() {
       const nextOffset = reset ? 0 : offset;
       try {
         const res = await repo.listFeed({
-          wilayaCode,
-          areaId: selectedCommune !== 'all' ? selectedCommune : undefined,
+          wilayaCode: isNational ? undefined : wilayaCode,
+          areaId: !isNational && selectedCommune !== 'all' ? selectedCommune : undefined,
           categoryId: selectedCategory !== 'all' ? selectedCategory : undefined,
           search: searchQuery.trim() || undefined,
           sort: sortKey,
@@ -115,7 +116,7 @@ export default function FeedPage() {
         setLoading(false);
       }
     },
-    [cat, repo, wilayaCode, selectedCommune, selectedCategory, searchQuery, sortKey, offset],
+    [cat, repo, isNational, wilayaCode, selectedCommune, selectedCategory, searchQuery, sortKey, offset],
   );
 
   useEffect(() => {
@@ -128,7 +129,7 @@ export default function FeedPage() {
       loadFeed(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cat, wilayaCode, selectedCategory, selectedCommune, sortKey, location.key]);
+  }, [cat, isNational, wilayaCode, selectedCategory, selectedCommune, sortKey, location.key]);
 
   // Debounced search trigger
   useEffect(() => {
@@ -228,30 +229,42 @@ export default function FeedPage() {
           ))}
         </div>
 
-        {/* Secondary filters row: Commune selector & Sorting */}
+        {/* Secondary filters row: Scope toggle (Wilaya vs All Algeria), Commune selector & Sorting */}
         <div className="mt-2.5 flex items-center justify-between gap-2 text-xs">
           <div className="flex min-w-0 flex-1 items-center gap-1.5">
-            <MapPin className="size-3.5 shrink-0 text-brand-600" />
-            <span className="font-bold text-ink-2 shrink-0 hidden sm:inline truncate max-w-[120px]">
-              {currentWilayaName}
-            </span>
-            <span className="text-muted/60 hidden sm:inline">·</span>
-            {communesInWilaya.length > 0 && (
-              <div className="min-w-0 flex-1 max-w-[240px]">
-                <Select
-                  value={selectedCommune}
-                  onChange={(e) => setSelectedCommune(e.target.value)}
-                  aria-label={t('feed.allAreas')}
-                  className="h-8 w-full min-w-0 py-0 ps-2.5 pe-7 text-xs font-semibold rounded-xl border-line bg-surface shadow-2xs hover:bg-canvas transition-colors"
-                >
-                  <option value="all">{t('feed.allAreas')}</option>
-                  {communesInWilaya.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {name(a)}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+            <button
+              type="button"
+              onClick={() => setIsNational((prev) => !prev)}
+              className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 font-bold transition-colors ${
+                isNational
+                  ? 'border-brand-600 bg-brand-50 text-brand-700'
+                  : 'border-line bg-surface text-ink-2 hover:bg-canvas'
+              }`}
+            >
+              <MapPin className="size-3.5 shrink-0 text-brand-600" />
+              <span>{isNational ? t('feed.allAlgeria') : currentWilayaName}</span>
+            </button>
+            {!isNational && (
+              <>
+                <span className="text-muted/60 hidden sm:inline">·</span>
+                {communesInWilaya.length > 0 && (
+                  <div className="min-w-0 flex-1 max-w-[200px]">
+                    <Select
+                      value={selectedCommune}
+                      onChange={(e) => setSelectedCommune(e.target.value)}
+                      aria-label={t('feed.allAreas')}
+                      className="h-8 w-full min-w-0 py-0 ps-2.5 pe-7 text-xs font-semibold rounded-xl border-line bg-surface shadow-2xs hover:bg-canvas transition-colors"
+                    >
+                      <option value="all">{t('feed.allAreas')}</option>
+                      {communesInWilaya.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {name(a)}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
+              </>
             )}
           </div>
 

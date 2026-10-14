@@ -454,8 +454,11 @@ export const fr: Record<MessageKey, string> = {
   'plan.chooseReplacement': 'Choisir un plat alternatif',
   'plan.foodPreferences': 'Préférences et remarques alimentaires',
   'plan.foodPreferencesPlaceholder': 'ex: Recettes traditionnelles algériennes, privilégier le poulet ou les lentilles…',
+  'feed.allAlgeria': 'Toute l’Algérie',
   'trends.allCategoriesOverview': 'Aperçu du marché par catégorie',
   'trends.viewProduct': 'Voir la courbe',
+  'trends.noData': 'Aucun relevé de prix approuvé pour ce produit à {area} pour le moment.',
+  'trends.noDataAction': 'Signalez un prix pour lancer le suivi de ce produit',
   'nav.terms': "Conditions d'utilisation",
   'terms.title': "Conditions d'utilisation",
   'terms.lastUpdated': 'Dernière mise à jour : octobre 2026',
@@ -476,5 +479,5 @@ export const fr: Record<MessageKey, string> = {
   'terms.section7Body': 'As3ari est fourni « tel quel » sans aucune garantie. Nous ne sommes pas responsables des pertes résultant de la confiance accordée aux données de prix ou aux plans de repas générés par IA.',
   'terms.section8Title': '8. Modifications des conditions',
   'terms.section8Body': "Nous pouvons mettre à jour ces conditions à tout moment. L'utilisation continue de la plateforme après la publication des modifications constitue une acceptation des nouvelles conditions.",
-  'terms.contact': 'Questions ? Contactez-nous à : support@as3ari.app',
+  'terms.contact': 'Questions ? Contactez-nous à : contact.as3ari@gmail.com',
 };
