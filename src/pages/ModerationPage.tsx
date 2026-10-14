@@ -109,7 +109,7 @@ export default function ModerationPage() {
                       </Button>
                     )}
                     <Button size="sm" variant="danger" disabled={busyId === r.id} onClick={() => act(r.id, 'reject')}>
-                      {t('mod.reject')}
+                      Remove
                     </Button>
                   </div>
                 </li>

@@ -14,6 +14,8 @@ export const CATEGORIES: Category[] = [
   { id: 'grains-legumes', name_en: 'Grains, pasta & legumes', name_fr: 'Céréales, pâtes & légumineuses', name_ar: 'حبوب وعجائن وبقول', recent_days: 30, stale_days: 90, sort_order: 5 },
   { id: 'bakery', name_en: 'Bread', name_fr: 'Pain', name_ar: 'خبز', recent_days: 14, stale_days: 45, sort_order: 6 },
   { id: 'pantry', name_en: 'Oil & pantry', name_fr: 'Huile & épicerie', name_ar: 'زيت ومواد غذائية', recent_days: 30, stale_days: 90, sort_order: 7 },
+  { id: 'desserts', name_en: 'Desserts', name_fr: 'Desserts', name_ar: 'حلويات', recent_days: 14, stale_days: 45, sort_order: 8 },
+  { id: 'drinks', name_en: 'Drinks', name_fr: 'Boissons', name_ar: 'مشروبات', recent_days: 7, stale_days: 21, sort_order: 9 },
 ];
 
 type P = [
@@ -55,6 +57,9 @@ const PRODUCTS_RAW: P[] = [
   ['beef-minced', 'meat-poultry', 'mass', ['Minced beef', 'Viande hachée', 'لحم مفروم'], ['beef', 'bœuf', 'بقر'], ['minced', 'hachee', 'kefta', 'كفتة'], ['800', '6000']],
   ['sardines', 'fish', 'mass', ['Sardines', 'Sardines', 'سردين'], ['fresh', 'fraîches', 'طازج'], ['sardine', 'poisson', 'fish', 'سمك'], ['100', '2500']],
   ['baguette', 'bakery', 'count', ['Baguette', 'Baguette', 'خبز'], ['standard', 'ordinaire', 'عادي'], ['bread', 'pain', 'khobz', 'كسرة'], ['5', '100']],
+  ['baklava', 'desserts', 'count', ['Baklava', 'Baklava', 'بقلاوة'], null, ['baklava', 'baklawa', 'boulawa'], ['50', '1000']],
+  ['orange-juice', 'drinks', 'volume', ['Orange juice', 'Jus d’orange', 'عصير برتقال'], ['fresh', 'frais', 'طازج'], ['juice', 'jus', 'asir', 'عصير'], ['80', '1200']],
+  ['water', 'drinks', 'volume', ['Water', 'Eau', 'ماء'], ['mineral', 'minérale', 'معدني'], ['water', 'eau', 'ma', 'ماء'], ['20', '400']],
 ];
 
 export const PRODUCTS: Product[] = PRODUCTS_RAW.map(([id, category_id, dimension, names, variant, terms, [min, max]]) => ({

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Vegetables illustration">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3fbd8"/>
+      <stop offset="1" stop-color="#dff6c6"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg)"/>
+  <circle cx="270" cy="250" r="110" fill="#6bbf59" opacity="0.9"/>
+  <circle cx="420" cy="290" r="120" fill="#8dcf5a" opacity="0.9"/>
+  <circle cx="540" cy="235" r="95" fill="#7bcf4f" opacity="0.96"/>
+  <path d="M325 250c-18-50 0-100 48-130 40 30 52 68 38 114-29 20-56 22-86 16z" fill="#2e8b57"/>
+  <path d="M468 289c-10-58 18-110 72-136 46 27 67 74 52 124-28 18-60 26-124 12z" fill="#3ea868"/>
+  <path d="M545 252c-6-35 12-62 54-88 38 20 58 58 51 92-38 12-68 11-105 -4z" fill="#4caf50"/>
+  <path d="M180 540c46-78 130-120 212-120 96 0 194 46 248 126v121H180V540z" fill="#d7f2a6" opacity="0.8"/>
+  <path d="M166 580c36-104 120-160 202-160 96 0 192 48 250 142l-36 98H180z" fill="#f8f9db" opacity="0.9"/>
+  <circle cx="300" cy="475" r="42" fill="#f8d46a" opacity="0.9"/>
+  <circle cx="430" cy="454" r="35" fill="#f2b656" opacity="0.9"/>
+</svg>

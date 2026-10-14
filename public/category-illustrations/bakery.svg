@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Bread and bakery illustration">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff6e5"/>
+      <stop offset="1" stop-color="#ffe0b3"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg)"/>
+  <path d="M170 455c0-111 100-201 224-201s224 90 224 201v110H170V455z" fill="#d8a76a"/>
+  <path d="M230 465c0-88 87-158 182-158s182 70 182 158v84H230v-84z" fill="#f3c27d"/>
+  <path d="M278 365c26-66 68-99 120-99 52 0 95 30 120 95" stroke="#a7632f" stroke-width="16" stroke-linecap="round" fill="none"/>
+  <path d="M295 504c52 18 112 19 164 2" stroke="#a7632f" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <path d="M406 372c-14 38-24 71-19 110" stroke="#9b5520" stroke-width="12" stroke-linecap="round" fill="none"/>
+  <circle cx="270" cy="250" r="42" fill="#f0c98e" opacity="0.8"/>
+  <circle cx="556" cy="312" r="36" fill="#f5d39c" opacity="0.8"/>
+</svg>

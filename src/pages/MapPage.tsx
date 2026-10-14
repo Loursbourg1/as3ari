@@ -193,16 +193,33 @@ export default function MapPage() {
     });
   }, [observations, selectedProductFilter]);
 
-  // Priority pins: User reports first, then newest, capped at top 60 for snappy 60fps mobile rendering
+  // Priority pins: User reports first, then newest, capped at top 60 for snappy 60fps mobile rendering.
+  // Nearby pins are subtly spread apart so dense clusters remain readable.
   const displayPins = useMemo(() => {
-    return [...filteredObservations]
+    const ranked = [...filteredObservations]
       .sort((a, b) => {
         if (!a.is_demo && b.is_demo) return -1;
         if (a.is_demo && !b.is_demo) return 1;
         return b.observed_on.localeCompare(a.observed_on);
       })
       .slice(0, 60);
-  }, [filteredObservations]);
+
+    const counts = new Map<string, number>();
+    return ranked.map((obs) => {
+      const baseLat = obs.lat ?? mapCenter[0];
+      const baseLng = obs.lng ?? mapCenter[1];
+      const key = `${Math.round(baseLat * 100000)}:${Math.round(baseLng * 100000)}`;
+      const index = counts.get(key) ?? 0;
+      counts.set(key, index + 1);
+      const angle = (index % 8) * (Math.PI / 4) + (index > 7 ? 0.5 : 0);
+      const radius = index === 0 ? 0 : 0.00016 + index * 0.00008;
+      return {
+        ...obs,
+        displayLat: baseLat + Math.cos(angle) * radius,
+        displayLng: baseLng + Math.sin(angle) * radius,
+      };
+    });
+  }, [filteredObservations, mapCenter]);
 
   const productMap = useMemo(() => {
     if (!cat) return new Map<string, Product>();
@@ -246,6 +263,24 @@ export default function MapPage() {
   }
 
   const currentWilayaName = wilaya ? name(wilaya) : 'Algeria';
+
+  const handleCopyLocation = async (obs: PriceObservation) => {
+    const lat = obs.lat ?? mapCenter[0];
+    const lng = obs.lng ?? mapCenter[1];
+    const text = `${obs.location_label ?? 'Price report'} — ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // no-op; the app still keeps the location visible on-screen.
+    }
+  };
+
+  const handleDirections = (obs: PriceObservation) => {
+    const lat = obs.lat ?? mapCenter[0];
+    const lng = obs.lng ?? mapCenter[1];
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-canvas">
@@ -325,8 +360,9 @@ export default function MapPage() {
 
           {/* Render Picture Card Markers on Map (snappy 60fps) */}
           {displayPins.map((obs) => {
-            const pinLat = obs.lat ?? mapCenter[0];
-            const pinLng = obs.lng ?? mapCenter[1];
+            const displayObs = obs as PriceObservation & { displayLat?: number; displayLng?: number };
+            const pinLat = displayObs.displayLat ?? obs.lat ?? mapCenter[0];
+            const pinLng = displayObs.displayLng ?? obs.lng ?? mapCenter[1];
 
             const prod = productMap.get(obs.product_id);
             const prodName = prod ? name(prod) : obs.product_id;
@@ -462,10 +498,10 @@ export default function MapPage() {
               })()}
 
               {/* Action: Report a price at this location or product */}
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <Link
                   to={`/contribute?product=${selectedPin.product_id}`}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-600 py-2 text-xs font-bold text-white shadow-xs hover:bg-brand-700"
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-brand-600 py-2 text-xs font-bold text-white shadow-xs hover:bg-brand-700"
                 >
                   <PlusCircle className="size-3.5" />
                   <span>{t('feed.reportAgain')}</span>
@@ -477,6 +513,20 @@ export default function MapPage() {
                   <Sparkles className="size-3.5 text-brand-600" />
                   <span>{t('nav.plan')}</span>
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => handleDirections(selectedPin)}
+                  className="rounded-xl border border-line bg-surface px-3 py-2 text-xs font-bold text-ink-2 hover:bg-canvas"
+                >
+                  Directions
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCopyLocation(selectedPin)}
+                  className="rounded-xl border border-line bg-surface px-3 py-2 text-xs font-bold text-ink-2 hover:bg-canvas"
+                >
+                  Copy location
+                </button>
               </div>
             </div>
           </div>

@@ -742,7 +742,7 @@ export default function ContributePage() {
         </div>
 
         {/* 7. ANTI-SPAM VERIFICATION */}
-        <div className="border-t border-line/70 pt-3">
+        <div className="hidden" aria-hidden="true">
           <GoogleCaptcha onVerify={(token) => setCaptchaToken(token)} />
         </div>
 

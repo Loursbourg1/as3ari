@@ -110,31 +110,33 @@
   bottom: 0;
   transform: translate(-50%, 0);
   display: inline-flex;
-  align-items: baseline;
-  gap: 1px;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   white-space: nowrap;
-  padding: 3px 7px;
-  border-radius: 7px;
+  padding: 6px 10px;
+  border-radius: 9999px;
   background: #fff;
   color: var(--color-ink);
   border: 1.5px solid var(--color-brand-500);
-  box-shadow: var(--shadow-card);
-  font-weight: 700;
-  font-size: 13px;
-  line-height: 16px;
+  box-shadow: 0 10px 18px rgb(15 23 42 / 0.12);
+  font-weight: 800;
+  font-size: 12px;
+  line-height: 1;
   direction: ltr;
 }
 .as3-pin::after {
   content: '';
   position: absolute;
   left: 50%;
-  bottom: -6px;
-  width: 8px;
-  height: 8px;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
   background: inherit;
   border-right: inherit;
   border-bottom: inherit;
   transform: translateX(-50%) rotate(45deg);
+  z-index: -1;
 }
 .as3-pin small {
   font-size: 10px;
@@ -172,12 +174,12 @@
   left: 0;
   top: 0;
   transform: translate(-50%, -50%);
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: #fff;
   border: 3px solid var(--color-brand-500);
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 8px 14px rgb(15 23 42 / 0.14);
 }
 .as3-dot.is-muted {
   border-color: #aab2bc;
