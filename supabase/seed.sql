@@ -76,7 +76,9 @@ insert into public.categories (id, name_en, name_fr, name_ar, recent_days, stale
   ('dairy-eggs', 'Dairy & eggs', 'Produits laitiers & œufs', 'حليب وبيض', 14, 45, 4),
   ('grains-legumes', 'Grains, pasta & legumes', 'Céréales, pâtes & légumineuses', 'حبوب وعجائن وبقول', 30, 90, 5),
   ('bakery', 'Bread', 'Pain', 'خبز', 14, 45, 6),
-  ('pantry', 'Oil & pantry', 'Huile & épicerie', 'زيت ومواد غذائية', 30, 90, 7)
+  ('pantry', 'Oil & pantry', 'Huile & épicerie', 'زيت ومواد غذائية', 30, 90, 7),
+  ('desserts', 'Desserts', 'Desserts', 'حلويات', 14, 45, 8),
+  ('drinks', 'Drinks', 'Boissons', 'مشروبات', 7, 21, 9)
 on conflict (id) do update set recent_days = excluded.recent_days, stale_days = excluded.stale_days, name_en = excluded.name_en, name_fr = excluded.name_fr, name_ar = excluded.name_ar, sort_order = excluded.sort_order;
 
 insert into public.products (id, category_id, name_en, name_fr, name_ar, variant_en, variant_fr, variant_ar, dimension, search_terms, min_unit_price, max_unit_price) values
@@ -107,7 +109,10 @@ insert into public.products (id, category_id, name_en, name_fr, name_ar, variant
   ('lamb', 'meat-poultry', 'Lamb', 'Viande ovine', 'لحم الغنم', 'on the bone', 'avec os', 'بالعظم', 'mass', array['mutton', 'mouton', 'agneau', 'lham', 'لحم']::text[], 800, 6000),
   ('beef-minced', 'meat-poultry', 'Minced beef', 'Viande hachée', 'لحم مفروم', 'beef', 'bœuf', 'بقر', 'mass', array['minced', 'hachee', 'kefta', 'كفتة']::text[], 800, 6000),
   ('sardines', 'fish', 'Sardines', 'Sardines', 'سردين', 'fresh', 'fraîches', 'طازج', 'mass', array['sardine', 'poisson', 'fish', 'سمك']::text[], 100, 2500),
-  ('baguette', 'bakery', 'Baguette', 'Baguette', 'خبز', 'standard', 'ordinaire', 'عادي', 'count', array['bread', 'pain', 'khobz', 'كسرة']::text[], 5, 100)
+  ('baguette', 'bakery', 'Baguette', 'Baguette', 'خبز', 'standard', 'ordinaire', 'عادي', 'count', array['bread', 'pain', 'khobz', 'كسرة']::text[], 5, 100),
+  ('baklava', 'desserts', 'Baklava', 'Baklava', 'بقلاوة', null, null, null, 'count', array['baklava', 'baklawa', 'boulawa']::text[], 50, 1000),
+  ('orange-juice', 'drinks', 'Orange juice', 'Jus d’orange', 'عصير برتقال', 'fresh', 'frais', 'طازج', 'volume', array['juice', 'jus', 'asir', 'عصير']::text[], 80, 1200),
+  ('water', 'drinks', 'Water', 'Eau', 'ماء', 'mineral', 'minérale', 'معدني', 'volume', array['water', 'eau', 'ma', 'ماء']::text[], 20, 400)
 on conflict do nothing;
 
 insert into public.ingredients (id, name_en, name_fr, name_ar, dimension, diet_tags, is_staple, pricing_product_id) values
@@ -136,8 +141,18 @@ insert into public.ingredients (id, name_en, name_fr, name_ar, dimension, diet_t
   ('beef-minced', 'Minced beef', 'Viande hachée', 'لحم مفروم', 'mass', array['red_meat']::text[], false, 'beef-minced'),
   ('sardines', 'Sardines', 'Sardines', 'سردين', 'mass', array['fish']::text[], false, 'sardines'),
   ('bread', 'Bread (baguette)', 'Pain (baguette)', 'خبز', 'count', array['gluten']::text[], false, 'baguette'),
+  ('baklava', 'Baklava', 'Baklava', 'بقلاوة', 'count', array['gluten']::text[], false, 'baklava'),
+  ('orange-juice', 'Orange juice', 'Jus d’orange', 'عصير برتقال', 'volume', '{}'::text[], false, 'orange-juice'),
+  ('water', 'Water', 'Eau', 'ماء', 'volume', '{}'::text[], false, 'water'),
   ('salt-spices', 'Salt & spices', 'Sel & épices', 'ملح وتوابل', 'mass', '{}'::text[], true, null)
-on conflict do nothing;
+on conflict (id) do update set
+  name_en = excluded.name_en,
+  name_fr = excluded.name_fr,
+  name_ar = excluded.name_ar,
+  dimension = excluded.dimension,
+  diet_tags = excluded.diet_tags,
+  is_staple = excluded.is_staple,
+  pricing_product_id = excluded.pricing_product_id;
 
 insert into public.recipes (id, name_en, name_fr, name_ar, servings, meal_slots, steps) values
   ('lentil-stew', 'Lentil stew (Adess)', 'Lentilles en sauce (Adess)', 'عدس بالمرق', 4, array['lunch', 'dinner']::public.meal_slot[], '{"en":["Rinse the lentils.","Soften chopped onion and garlic in the oil, add grated tomato and spices.","Add lentils, diced carrot and potato, cover with water.","Simmer 35–40 minutes until tender. Serve with bread."],"fr":["Rincer les lentilles.","Faire revenir l''oignon et l''ail dans l''huile, ajouter la tomate râpée et les épices.","Ajouter les lentilles, la carotte et la pomme de terre en dés, couvrir d''eau.","Laisser mijoter 35 à 40 minutes. Servir avec du pain."],"ar":["اغسل العدس.","شوّح البصل والثوم في الزيت ثم أضف الطماطم المبشورة والتوابل.","أضف العدس والجزر والبطاطا المقطعة وغطّها بالماء.","اتركه يطهى 35 إلى 40 دقيقة. يقدم مع الخبز."]}'::jsonb),

@@ -108,6 +108,14 @@ export function recalculatePlan(
     return { recipe: r, scale };
   });
   const aggregate = aggregateIngredients(uses);
+  for (const meal of meals) {
+    if (!meal.priorityIngredientId) continue;
+    const ingredient = catalog.ingredients.find((item) => item.id === meal.priorityIngredientId);
+    if (!ingredient) continue;
+    const quantityPerFour = ingredient.dimension === 'count' ? 4 : ingredient.dimension === 'volume' ? 1000 : 500;
+    const quantity = new Big(quantityPerFour).times(scale);
+    aggregate.set(ingredient.id, (aggregate.get(ingredient.id) ?? new Big(0)).plus(quantity));
+  }
 
   // 2. Convert pantry stocks into base units
   const pantryBase = pantryToBase(pantryItems);

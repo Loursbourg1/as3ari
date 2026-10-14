@@ -105,6 +105,9 @@ const INGREDIENTS_RAW: I[] = [
   ['beef-minced', 'beef-minced', 'mass', ['Minced beef', 'Viande hachée', 'لحم مفروم'], ['red_meat']],
   ['sardines', 'sardines', 'mass', ['Sardines', 'Sardines', 'سردين'], ['fish']],
   ['bread', 'baguette', 'count', ['Bread (baguette)', 'Pain (baguette)', 'خبز'], ['gluten']],
+  ['baklava', 'baklava', 'count', ['Baklava', 'Baklava', 'بقلاوة'], ['gluten']],
+  ['orange-juice', 'orange-juice', 'volume', ['Orange juice', 'Jus d’orange', 'عصير برتقال'], []],
+  ['water', 'water', 'volume', ['Water', 'Eau', 'ماء'], []],
   ['salt-spices', null, 'mass', ['Salt & spices', 'Sel & épices', 'ملح وتوابل'], []],
 ];
 

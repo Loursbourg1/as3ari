@@ -456,13 +456,6 @@ export function PriceTrendChart({
             viewBox={`0 0 ${svgWidth} ${svgHeight}`}
             className="w-full h-44 sm:h-52 overflow-visible select-none"
           >
-            <defs>
-              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#0d978e" stopOpacity="0.22" />
-                <stop offset="100%" stopColor="#0d978e" stopOpacity="0.01" />
-              </linearGradient>
-            </defs>
-
             {/* Horizontal grid guidelines */}
             {[0.2, 0.5, 0.8].map((level) => {
               const y = paddingY + level * (svgHeight - paddingY * 2);
@@ -492,15 +485,14 @@ export function PriceTrendChart({
               );
             })}
 
-            {/* Area gradient under the line */}
-            {areaPath && <path d={areaPath} fill="url(#chartGradient)" />}
+            {areaPath && <path d={areaPath} fill="#f4f5f6" />}
 
             {/* Clean brand teal line */}
             {linePath && (
               <path
                 d={linePath}
                 fill="none"
-                stroke="#0d978e"
+                stroke="#174c30"
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -525,7 +517,7 @@ export function PriceTrendChart({
                     cy={cy}
                     r={isHovered ? 6 : 4}
                     fill="#ffffff"
-                    stroke="#0d978e"
+                    stroke="#174c30"
                     strokeWidth={isHovered ? 3 : 2}
                     className="transition-all"
                   />
@@ -548,7 +540,7 @@ export function PriceTrendChart({
 
           {/* Hover / Touch Tooltip Card */}
           {hoveredPoint && (
-            <div className="absolute top-3 end-3 rounded-xl border border-line bg-surface px-3 py-2 text-xs shadow-card backdrop-blur animate-in fade-in">
+            <div className="absolute top-3 end-3 rounded-xl border border-line bg-surface px-3 py-2 text-xs shadow-card animate-in fade-in">
               <div className="flex items-center justify-between gap-3 text-ink-2">
                 <span className="font-bold text-ink">{hoveredPoint.label}</span>
                 <span className="text-[10px] text-muted">

@@ -6,16 +6,16 @@
 @theme {
   --font-sans: 'Inter Variable', 'Noto Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
 
-  --color-brand-50: #e9f8f6;
-  --color-brand-100: #ccefeb;
-  --color-brand-200: #9be0d9;
-  --color-brand-300: #5fc9c0;
-  --color-brand-400: #27afa5;
-  --color-brand-500: #0d978e;
-  --color-brand-600: #0a7d76;
-  --color-brand-700: #0a6560;
-  --color-brand-800: #0c514d;
-  --color-brand-900: #0c4341;
+  --color-brand-50: #f4f5f6;
+  --color-brand-100: #e5e8eb;
+  --color-brand-200: #cfd5db;
+  --color-brand-300: #174c30;
+  --color-brand-400: #174c30;
+  --color-brand-500: #174c30;
+  --color-brand-600: #174c30;
+  --color-brand-700: #174c30;
+  --color-brand-800: #174c30;
+  --color-brand-900: #174c30;
 
   --color-ink: #141a21;
   --color-ink-2: #3a4350;
@@ -25,8 +25,8 @@
   --color-canvas: #f4f5f6;
   --color-surface: #ffffff;
 
-  --color-good: #11744a;
-  --color-good-bg: #e5f5ec;
+  --color-good: #174c30;
+  --color-good-bg: #f4f5f6;
   --color-warn: #8a5300;
   --color-warn-bg: #fff3dc;
   --color-stale: #5f6875;
@@ -36,9 +36,12 @@
   --color-demo: #6232c7;
   --color-demo-bg: #f1ebff;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 12px;
+  --radius-md: 12px;
+  --radius-lg: 12px;
+  --radius-xl: 12px;
+  --radius-2xl: 12px;
+  --radius-3xl: 12px;
 
   --shadow-card: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.07);
   --shadow-float: 0 6px 20px rgb(16 24 40 / 0.16);
@@ -118,7 +121,7 @@
   border-radius: 9999px;
   background: #fff;
   color: var(--color-ink);
-  border: 1.5px solid var(--color-brand-500);
+  border: 1.5px solid #174c30;
   box-shadow: 0 10px 18px rgb(15 23 42 / 0.12);
   font-weight: 800;
   font-size: 12px;
@@ -144,12 +147,12 @@
   color: var(--color-muted);
 }
 .as3-pin.is-lowest {
-  background: var(--color-brand-600);
-  border-color: var(--color-brand-700);
+  background: #174c30;
+  border-color: #174c30;
   color: #fff;
 }
 .as3-pin.is-lowest small {
-  color: var(--color-brand-100);
+  color: #fff;
 }
 .as3-pin.is-aging {
   border-color: #d39a3a;
@@ -163,7 +166,7 @@
 .as3-pin.is-selected {
   transform: translate(-50%, 0) scale(1.12);
   z-index: 1000;
-  box-shadow: 0 0 0 3px rgb(13 151 142 / 0.35), var(--shadow-float);
+  box-shadow: 0 0 0 2px #174c30, var(--shadow-float);
 }
 .as3-pin.is-demo {
   outline: 1.5px dotted var(--color-demo);
@@ -178,7 +181,7 @@
   height: 16px;
   border-radius: 50%;
   background: #fff;
-  border: 3px solid var(--color-brand-500);
+  border: 3px solid #174c30;
   box-shadow: 0 8px 14px rgb(15 23 42 / 0.14);
 }
 .as3-dot.is-muted {
@@ -190,7 +193,7 @@
   width: 20px;
   height: 20px;
   border-width: 5px;
-  box-shadow: 0 0 0 4px rgb(13 151 142 / 0.3);
+  box-shadow: 0 0 0 2px #174c30;
 }
 .as3-dot.is-demo:not(.is-muted) {
   border-color: var(--color-demo);
@@ -212,5 +215,5 @@
 }
 .as3-marker:focus-visible .as3-pin,
 .as3-marker:focus-visible .as3-dot {
-  box-shadow: 0 0 0 3px var(--color-brand-500);
+  box-shadow: 0 0 0 3px #174c30;
 }

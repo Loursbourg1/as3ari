@@ -86,7 +86,7 @@ function SidebarDrawer({
     <div className="fixed inset-0 z-[2000]">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-black/40 transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -107,14 +107,6 @@ function SidebarDrawer({
           >
             <X className="size-5" />
           </button>
-        </div>
-
-        {/* The mobile header already includes the location selector. */}
-        <div className="hidden border-b border-line bg-canvas/60 px-4 py-2.5 lg:block">
-          <p className="text-[11px] font-semibold text-muted mb-1">
-            {t('location.search')}
-          </p>
-          <LocationSelector compact />
         </div>
 
         {/* Desktop navigation. Mobile uses the bottom navigation instead. */}

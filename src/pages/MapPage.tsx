@@ -70,10 +70,10 @@ const PictureCardPin = memo(function PictureCardPin({
           align-items: center;
           gap: 7px;
           background: #ffffff;
-          border: ${isSelected ? '2.5px solid #07615b' : '1.5px solid #0d978e'};
+          border: ${isSelected ? '2.5px solid #174c30' : '1.5px solid #174c30'};
           border-radius: 20px;
           padding: 3px 9px 3px 3px;
-          box-shadow: ${isSelected ? '0 4px 14px rgba(13,151,142,0.35)' : '0 2px 6px rgba(0,0,0,0.12)'};
+          box-shadow: ${isSelected ? '0 4px 14px rgba(23,76,48,0.2)' : '0 2px 6px rgba(0,0,0,0.12)'};
           cursor: pointer;
           white-space: nowrap;
           position: relative;
@@ -93,7 +93,7 @@ const PictureCardPin = memo(function PictureCardPin({
           </div>
           <div style="display: flex; flex-direction: column; line-height: 1.15; text-align: left;">
             <span style="font-size: 10px; font-weight: 700; color: #475569; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeXml(prodName)}</span>
-            <span style="font-size: 12px; font-weight: 900; color: #0d978e;">${priceNum} <span style="font-size: 9px; font-weight: 700; color: #64748b;">DZD</span></span>
+            <span style="font-size: 12px; font-weight: 900; color: #174c30;">${priceNum} <span style="font-size: 9px; font-weight: 700; color: #64748b;">DZD</span></span>
           </div>
           <div style="
             position: absolute;
@@ -104,7 +104,7 @@ const PictureCardPin = memo(function PictureCardPin({
             height: 0;
             border-left: 6px solid transparent;
             border-right: 6px solid transparent;
-            border-top: 6px solid ${isSelected ? '#07615b' : '#0d978e'};
+            border-top: 6px solid #174c30;
           "></div>
         </div>
       `,
@@ -126,7 +126,7 @@ const PictureCardPin = memo(function PictureCardPin({
 
 export default function MapPage() {
   const { t, name, locale } = useI18n();
-  const { repo, catalog, wilayaCode, wilaya, priceRevision } = useAppData();
+  const { repo, catalog, priceRevision } = useAppData();
   const cat = catalog.data;
 
   const [selectedProductFilter, setSelectedProductFilter] = useState<string>('all');
@@ -153,35 +153,37 @@ export default function MapPage() {
     setLoading(true);
     setError(false);
     try {
-      const res = await repo.listObservations({
-        wilayaCode,
-        limit: 500,
-        offset: 0,
-      });
-      setObservations(res.items);
+      const nationwide: PriceObservation[] = [];
+      let offset = 0;
+      let total: number | null = null;
+      do {
+        const page = await repo.listObservations({ limit: 500, offset });
+        nationwide.push(...page.items);
+        if (page.total === null || page.items.length === 0) break;
+        offset += page.items.length;
+        total = page.total;
+      } while (total !== null && offset < total);
+      setObservations(nationwide);
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
-  }, [cat, repo, wilayaCode]);
+  }, [cat, repo]);
 
   useEffect(() => {
     if (cat) {
       loadData();
     }
-  }, [cat, wilayaCode, loadData, priceRevision]);
+  }, [cat, loadData, priceRevision]);
 
   // Center coordinates: selected Wilaya center or national Algeria center
   const mapCenter = useMemo<[number, number]>(() => {
     if (userGps) return userGps;
-    if (wilaya && wilaya.center_lat && wilaya.center_lng) {
-      return [wilaya.center_lat, wilaya.center_lng];
-    }
-    return [36.75, 3.05]; // Default Algiers
-  }, [wilaya, userGps]);
+    return [28.0339, 1.6596]; // Geographic center of Algeria
+  }, [userGps]);
 
-  const mapZoom = userGps ? 13 : wilaya ? 11 : 7;
+  const mapZoom = userGps ? 13 : 5;
 
   // Filter observations by product filter
   const filteredObservations = useMemo(() => {
@@ -196,18 +198,40 @@ export default function MapPage() {
   // Priority pins: User reports first, then newest, capped at top 60 for snappy 60fps mobile rendering.
   // Nearby pins are subtly spread apart so dense clusters remain readable.
   const displayPins = useMemo(() => {
-    const ranked = [...filteredObservations]
+    const newest = filteredObservations
+      .filter((observation) => observation.lat != null && observation.lng != null)
       .sort((a, b) => {
         if (!a.is_demo && b.is_demo) return -1;
         if (a.is_demo && !b.is_demo) return 1;
         return b.observed_on.localeCompare(a.observed_on);
-      })
-      .slice(0, 60);
+      });
+
+    const byWilaya = new Map<string, PriceObservation[]>();
+    for (const observation of newest) {
+      const key = observation.wilaya_code === null ? 'unknown' : String(observation.wilaya_code);
+      const group = byWilaya.get(key) ?? [];
+      group.push(observation);
+      byWilaya.set(key, group);
+    }
+
+    // Give each represented wilaya a recent pin before showing a second from any one area.
+    const ranked: PriceObservation[] = [];
+    for (let rank = 0; ranked.length < 60; rank += 1) {
+      let added = false;
+      for (const group of byWilaya.values()) {
+        if (group[rank]) {
+          ranked.push(group[rank]!);
+          added = true;
+          if (ranked.length === 60) break;
+        }
+      }
+      if (!added) break;
+    }
 
     const counts = new Map<string, number>();
     return ranked.map((obs) => {
-      const baseLat = obs.lat ?? mapCenter[0];
-      const baseLng = obs.lng ?? mapCenter[1];
+      const baseLat = obs.lat!;
+      const baseLng = obs.lng!;
       const key = `${Math.round(baseLat * 100000)}:${Math.round(baseLng * 100000)}`;
       const index = counts.get(key) ?? 0;
       counts.set(key, index + 1);
@@ -262,7 +286,7 @@ export default function MapPage() {
     );
   }
 
-  const currentWilayaName = wilaya ? name(wilaya) : 'Algeria';
+  const currentWilayaName = t('feed.allAlgeria');
 
   const handleCopyLocation = async (obs: PriceObservation) => {
     const lat = obs.lat ?? mapCenter[0];
@@ -285,7 +309,7 @@ export default function MapPage() {
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-canvas">
       {/* Top Controls Toolbar */}
-      <div className="z-[1100] shrink-0 border-b border-line bg-surface/95 px-3 py-2.5 backdrop-blur shadow-xs">
+      <div className="z-[1100] shrink-0 border-b border-line bg-surface px-3 py-2.5 shadow-xs">
         <div className="flex items-center justify-between gap-2">
           {/* Active location indicator */}
           <div className="flex items-center gap-1.5 text-xs">
@@ -388,7 +412,7 @@ export default function MapPage() {
         {/* Selected Pin Detailed Card Overlay */}
         {selectedPin && (
           <div className="absolute bottom-4 inset-x-4 z-[1000] flex justify-center animate-in slide-in-from-bottom duration-200">
-            <div className="w-full max-w-sm rounded-2xl border border-line bg-surface p-4 shadow-float backdrop-blur">
+            <div className="w-full max-w-sm rounded-2xl border border-line bg-surface p-4 shadow-float">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-canvas border border-line">

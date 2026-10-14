@@ -286,7 +286,7 @@ export default function FeedPage() {
       {/* Main Vertically Scrollable Feed */}
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-24">
         {/* Value Proposition Hero Banner */}
-        <div className="mb-4 rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-50 to-surface p-3.5 shadow-xs">
+        <div className="mb-4 rounded-2xl border border-line bg-surface p-3.5 shadow-xs">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-brand-700">
@@ -369,7 +369,7 @@ export default function FeedPage() {
                   className="group relative flex cursor-pointer flex-col sm:flex-row gap-3.5 rounded-2xl border border-line bg-surface p-3.5 shadow-card hover:border-brand-500 hover:shadow-md transition-all active:scale-[0.995]"
                 >
                   {/* Photo / Product visual thumbnail */}
-                  <div className="relative aspect-video sm:aspect-square sm:size-28 shrink-0 overflow-hidden rounded-xl bg-slate-900">
+                  <div className="relative aspect-video sm:aspect-square sm:size-28 shrink-0 overflow-hidden rounded-xl bg-canvas">
                     {cardPhoto ? (
                       <img
                         src={cardPhoto}
@@ -378,7 +378,7 @@ export default function FeedPage() {
                         className="h-full w-full object-cover transition-transform group-hover:scale-105"
                       />
                     ) : (
-                      <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-tr from-brand-900 to-brand-600 p-2 text-white text-center">
+                      <div className="flex h-full w-full flex-col items-center justify-center bg-brand-600 p-2 text-white text-center">
                         <Camera className="size-8 opacity-60" />
                         <span className="mt-1 text-[11px] font-semibold opacity-80">
                           {t('feed.reportedBy')}
@@ -534,7 +534,7 @@ export default function FeedPage() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-150"
+          className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-150"
           onClick={() => setSelectedObservation(null)}
         >
           <div
@@ -565,7 +565,7 @@ export default function FeedPage() {
             <div className="min-h-0 flex-1 overflow-y-auto p-5 space-y-4">
               {/* Photo Evidence if present */}
               {selectedObservation.photo_url || demoPhotoUrl(selectedObservation.product_id, selectedObservation.price) ? (
-                <div className="overflow-hidden rounded-2xl border border-line bg-slate-900 max-h-64 aspect-video">
+                <div className="overflow-hidden rounded-2xl border border-line bg-canvas max-h-64 aspect-video">
                   <img
                     src={selectedObservation.photo_url || demoPhotoUrl(selectedObservation.product_id, selectedObservation.price)}
                     alt={selectedProduct ? name(selectedProduct) : 'Report photo'}
@@ -726,7 +726,7 @@ export default function FeedPage() {
             {/* Modal Actions */}
             <div className="border-t border-line bg-surface p-4 flex flex-wrap gap-2 justify-end">
               <Link
-                to="/plan"
+                to={`/plan?priorityProduct=${encodeURIComponent(selectedObservation.product_id)}`}
                 onClick={() => setSelectedObservation(null)}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-line-strong px-4 py-2.5 text-xs font-bold text-ink hover:bg-canvas"
               >

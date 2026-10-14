@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -18,6 +18,7 @@ import { addDays } from '../domain/dates';
 import { BASE_UNIT, formatBaseQuantity, toBaseQuantity, unitsForDimension } from '../domain/units';
 import type { Catalog, DietTag, MealSlot, UnitCode } from '../domain/types';
 import { estimateIngredientPrices, type IngredientPrice } from '../planner/prices';
+import { ensurePriorityIngredientMeal } from '../planner/planner';
 import { loadForm, saveForm, savePlan, type PlannerForm } from '../planner/storage';
 import { generateSmartMealPlan, recalculatePlan, type AiMealPlanResult } from '../planner/aiPlanner';
 import { config } from '../config/env';
@@ -30,6 +31,8 @@ const TAGS: DietTag[] = ['red_meat', 'poultry', 'fish', 'egg', 'dairy', 'gluten'
 export default function PlannerPage() {
   const { t, name, locale } = useI18n();
   const { catalog, repo, wilayaCode, wilaya, today } = useAppData();
+  const [searchParams] = useSearchParams();
+  const priorityProductId = searchParams.get('priorityProduct');
   const [form, setForm] = useState<PlannerForm>(loadForm);
   const [foodPreferences, setFoodPreferences] = useState('');
   const [result, setResult] = useState<AiMealPlanResult | null>(null);
@@ -41,6 +44,10 @@ export default function PlannerPage() {
 
   const cat = catalog.data;
   if (!cat) return catalog.status === 'error' ? <ErrorState onRetry={catalog.reload} /> : <Spinner />;
+  const priorityProduct = priorityProductId ? cat.products.find((product) => product.id === priorityProductId) : undefined;
+  const priorityIngredient = priorityProductId
+    ? cat.ingredients.find((ingredient) => ingredient.pricing_product_id === priorityProductId)
+    : undefined;
 
   const update = (patch: Partial<PlannerForm>) => {
     const next = { ...form, ...patch };
@@ -72,13 +79,16 @@ export default function PlannerPage() {
         return q && ing && unitsForDimension(ing.dimension).includes(p.unit) ? [{ ...p, quantity: q }] : [];
       });
 
+      const preferredIngredients = priorityIngredient
+        ? [...new Set([...form.preferredIngredients, priorityIngredient.id])]
+        : form.preferredIngredients;
       const r = await generateSmartMealPlan({
         householdSize: size,
         budget,
         pantry,
         excludedTags: form.excludedTags,
         excludedIngredients: [],
-        preferredIngredients: form.preferredIngredients,
+        preferredIngredients,
         foodPreferences,
         wilayaCode,
         catalog: cat!,
@@ -87,9 +97,17 @@ export default function PlannerPage() {
         supabaseClient: supabase,
       });
 
-      setResult(r);
-      if (r.ok) {
-        savePlan({ version: 1, createdAt: new Date().toISOString(), wilayaCode, householdSize: size, meals: r.meals, lines: r.lines, summary: r.summary });
+      let finalResult = r;
+      if (r.ok && priorityIngredient) {
+        const meals = ensurePriorityIngredientMeal(r.meals, priorityIngredient.id, cat!.recipes, cat!.ingredients, form.excludedTags);
+        if (meals && meals !== r.meals) {
+          finalResult = recalculatePlan(meals, size, budget, pantry, cat!, prices, r.aiExplanation, r.isAiGenerated);
+        }
+      }
+
+      setResult(finalResult);
+      if (finalResult.ok) {
+        savePlan({ version: 1, createdAt: new Date().toISOString(), wilayaCode, householdSize: size, meals: finalResult.meals, lines: finalResult.lines, summary: finalResult.summary });
       }
       setState('idle');
     } catch {
@@ -148,6 +166,17 @@ export default function PlannerPage() {
           )}
         </div>
       </div>
+
+      {priorityProduct && (
+        <div className="mt-4 rounded-xl border border-line bg-surface p-3 text-sm text-ink-2">
+          <strong className="text-ink">{t('plan.priorityItem', { item: name(priorityProduct) })}</strong>
+          <p className="mt-1 text-xs text-muted">
+            {priorityIngredient
+              ? t('plan.priorityAvailable')
+              : t('plan.priorityUnavailable')}
+          </p>
+        </div>
+      )}
 
 
       <form
@@ -327,7 +356,7 @@ export default function PlannerPage() {
           <p className="mt-1 text-xs text-muted">{t('plan.preferencesHint')}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {costable.map((i) => {
-              const on = form.preferredIngredients.includes(i.id);
+              const on = form.preferredIngredients.includes(i.id) || priorityIngredient?.id === i.id;
               return (
                 <button
                   key={i.id}
@@ -607,6 +636,9 @@ function PlanResult({
 
                 {meals.map((m) => {
                   const r = catalog.recipes.find((x) => x.id === m.recipeId)!;
+                  const priorityMealIngredient = m.priorityIngredientId
+                    ? catalog.ingredients.find((ingredient) => ingredient.id === m.priorityIngredientId)
+                    : undefined;
                   const key = `${m.day}-${m.slot}`;
                   const open = openMeal === key;
                   const isReplacing = replacingSlot?.day === m.day && replacingSlot?.slot === m.slot;
@@ -622,6 +654,7 @@ function PlanResult({
                         >
                           <Badge tone="neutral">{t(`plan.${m.slot}`)}</Badge>
                           <span className="truncate text-sm font-semibold text-ink">{name(r)}</span>
+                          {priorityMealIngredient && <Badge tone="brand">{t('plan.priorityExtra')}: {name(priorityMealIngredient)}</Badge>}
                           <ChevronDown className={cx('size-4 text-muted transition-transform shrink-0', open && 'rotate-180')} aria-hidden />
                         </button>
 
@@ -688,6 +721,15 @@ function PlanResult({
                                 </li>
                               );
                             })}
+                            {priorityMealIngredient && (() => {
+                              const quantityPerFour = priorityMealIngredient.dimension === 'count' ? '4' : priorityMealIngredient.dimension === 'volume' ? '1000' : '500';
+                              return (
+                                <li key={`priority-${priorityMealIngredient.id}`} className="flex justify-between gap-2 text-xs font-semibold text-brand-800">
+                                  <span>{name(priorityMealIngredient)} ({t('plan.priorityExtra')})</span>
+                                  <span className="num">{formatBaseQuantity(new Big(quantityPerFour).times(scale), priorityMealIngredient.dimension, qtyLabels)}</span>
+                                </li>
+                              );
+                            })()}
                           </ul>
                           <p className="text-xs font-semibold text-muted pt-1">{t('plan.steps')}</p>
                           <ol className="list-decimal space-y-0.5 ps-5 text-xs text-ink-2">

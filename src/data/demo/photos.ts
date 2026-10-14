@@ -1,4 +1,16 @@
 /** Deterministic stand-ins and real example community reported photos. */
+import {
+  faBasketShopping,
+  faBreadSlice,
+  faCakeCandles,
+  faCarrot,
+  faDrumstickBite,
+  faEgg,
+  faFish,
+  faGlassWater,
+  faWheatAwn,
+} from '@fortawesome/free-solid-svg-icons';
+
 const REAL_PHOTOS: Record<string, string> = {
   potatoes: '/examples/potatoes.jpg',
   onions: '/examples/onions.jpg',
@@ -6,16 +18,16 @@ const REAL_PHOTOS: Record<string, string> = {
   garlic: '/examples/garlic.jpg',
 };
 
-const CATEGORY_IMAGE_PATHS: Record<string, string> = {
-  vegetables: '/category-illustrations/vegetables.svg',
-  'meat-poultry': '/category-illustrations/meat-poultry.svg',
-  fish: '/category-illustrations/fish.svg',
-  'dairy-eggs': '/category-illustrations/dairy-eggs.svg',
-  'grains-legumes': '/category-illustrations/grains-legumes.svg',
-  bakery: '/category-illustrations/bakery.svg',
-  pantry: '/category-illustrations/pantry.svg',
-  desserts: '/category-illustrations/desserts.svg',
-  drinks: '/category-illustrations/drinks.svg',
+const CATEGORY_ICONS = {
+  vegetables: faCarrot,
+  'meat-poultry': faDrumstickBite,
+  fish: faFish,
+  'dairy-eggs': faEgg,
+  'grains-legumes': faWheatAwn,
+  bakery: faBreadSlice,
+  pantry: faBasketShopping,
+  desserts: faCakeCandles,
+  drinks: faGlassWater,
 };
 
 const PRODUCT_CATEGORY_FALLBACKS: Record<string, string> = {
@@ -53,7 +65,18 @@ const PRODUCT_CATEGORY_FALLBACKS: Record<string, string> = {
 };
 
 export function categoryImageUrl(categoryId: string): string {
-  return CATEGORY_IMAGE_PATHS[categoryId] ?? '/category-illustrations/pantry.svg';
+  const { icon: [width, height, , , paths] } = CATEGORY_ICONS[categoryId as keyof typeof CATEGORY_ICONS] ?? faBasketShopping;
+  const canvasSize = 128;
+  const iconSize = 72;
+  const scale = iconSize / Math.max(width, height);
+  const offsetX = (canvasSize - width * scale) / 2;
+  const offsetY = (canvasSize - height * scale) / 2;
+  const transform = `translate(${offsetX} ${offsetY}) scale(${scale})`;
+  const pathMarkup = (Array.isArray(paths) ? paths : [paths])
+    .map((path) => `<path fill="#174c30" transform="${transform}" d="${path}"/>`)
+    .join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${canvasSize} ${canvasSize}"><rect width="${canvasSize}" height="${canvasSize}" fill="#f4f5f6"/>${pathMarkup}</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 export function demoPhotoUrl(productId: string, priceLabel: string): string {

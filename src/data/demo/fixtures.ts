@@ -20,9 +20,9 @@ type DemoShopDef = [suffix: string, name: string, kind: ShopKind, dLat: number, 
 const SHOP_DEFS: DemoShopDef[] = [
   ['01', 'Demo covered market A', 'market', 0.0042, -0.0031, ['vegetables', 'fish', 'dairy-eggs']],
   ['02', 'Demo street market B', 'market', -0.0058, 0.0049, ['vegetables', 'grains-legumes']],
-  ['03', 'Demo grocery C', 'grocery', 0.0021, 0.0068, ['grains-legumes', 'pantry', 'dairy-eggs', 'bakery']],
+  ['03', 'Demo grocery C', 'grocery', 0.0021, 0.0068, ['grains-legumes', 'pantry', 'dairy-eggs', 'bakery', 'desserts', 'drinks']],
   ['04', 'Demo grocery D', 'grocery', -0.0074, -0.0062, ['grains-legumes', 'pantry', 'dairy-eggs', 'bakery']],
-  ['05', 'Demo supermarket E', 'supermarket', 0.0089, 0.0021, ['vegetables', 'grains-legumes', 'pantry', 'dairy-eggs', 'meat-poultry']],
+  ['05', 'Demo supermarket E', 'supermarket', 0.0089, 0.0021, ['vegetables', 'grains-legumes', 'pantry', 'dairy-eggs', 'meat-poultry', 'desserts', 'drinks']],
   ['06', 'Demo butcher F', 'butcher', -0.0019, -0.0088, ['meat-poultry']],
   ['07', 'Demo bakery G', 'bakery', 0.0063, -0.0079, ['bakery']],
   ['08', 'Demo greengrocer H', 'greengrocer', -0.0031, 0.0012, ['vegetables']],
@@ -48,6 +48,7 @@ const DEMO_LEVEL: Record<string, string> = {
   spaghetti: '180', couscous: '150', 'semolina-fine': '110', flour: '75', frik: '450', 'tomato-paste': '600',
   'vegetable-oil': '260', sugar: '110', eggs: '22', 'milk-pasteurised-bag': '25', 'milk-uht': '150',
   'chicken-whole': '450', lamb: '2400', 'beef-minced': '2200', sardines: '700', baguette: '10',
+  baklava: '150', 'orange-juice': '180', water: '50',
 };
 
 /** Package sizes the demo generator picks from: [quantity, unit]. */
@@ -60,6 +61,7 @@ const PACKAGES: Record<string, [string, UnitCode][]> = {
   'vegetable-oil': [['1', 'l'], ['5', 'l']], sugar: [['1', 'kg']], eggs: [['30', 'piece'], ['1', 'piece']],
   'milk-pasteurised-bag': [['1', 'l']], 'milk-uht': [['1', 'l']], 'chicken-whole': [['1', 'kg']],
   lamb: [['1', 'kg']], 'beef-minced': [['1', 'kg'], ['500', 'g']], sardines: [['1', 'kg']], baguette: [['1', 'piece']],
+  baklava: [['1', 'piece']], 'orange-juice': [['1', 'l']], water: [['1', 'l']],
 };
 
 function mulberry32(seed: number) {
@@ -96,7 +98,7 @@ export function demoObservationDefs(): DemoObservationDef[] {
     const staleShop = shopIndex === 3;
     for (const p of PRODUCTS) {
       if (!cats.includes(p.category_id)) continue;
-      if (rand() > 0.8) continue; // not every shop has a report for every product
+      if (!['baklava', 'orange-juice', 'water'].includes(p.id) && rand() > 0.8) continue; // keep at least some dessert/drink demo coverage everywhere
       const pkgs = PACKAGES[p.id]!;
       const [qty, unit] = pkgs[Math.floor(rand() * pkgs.length)]!;
       const level = new Big(DEMO_LEVEL[p.id]!);

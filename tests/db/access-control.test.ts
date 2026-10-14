@@ -327,7 +327,7 @@ describe('public read API', () => {
       expect(r.rows.map((x) => x.id)).toContain('potatoes');
       expect((await db.query(`select id from public.search_products($1)`, ['%'])).rows).toHaveLength(0);
       expect((await db.query(`select id from public.search_products($1)`, ["'; drop table public.products; --"])).rows).toHaveLength(0);
-      expect((await db.query(`select count(*)::int as n from public.products`)).rows[0]).toEqual({ n: 28 });
+      expect((await db.query(`select count(*)::int as n from public.products`)).rows[0]).toEqual({ n: 31 });
     });
   });
 

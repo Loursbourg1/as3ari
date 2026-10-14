@@ -2,14 +2,28 @@ import { describe, expect, it } from 'vitest';
 import { Big } from '../../domain/money';
 import { PRODUCTS } from '../reference/catalog';
 import { DEMO_SHOPS, demoObservationDefs, demoObservations } from './fixtures';
+import { categoryImageUrl } from './photos';
 
 describe('demo fixtures', () => {
+  it('uses distinct Font Awesome vectors for each food category', () => {
+    const categories = ['vegetables', 'meat-poultry', 'fish', 'dairy-eggs', 'grains-legumes', 'bakery', 'pantry', 'desserts', 'drinks'];
+    const icons = categories.map((category) => categoryImageUrl(category));
+    expect(new Set(icons).size).toBe(categories.length);
+    const svg = decodeURIComponent(icons[0]!.split(',')[1]!);
+    expect(svg).toContain('viewBox="0 0 128 128"');
+    expect(svg).toContain('fill="#174c30" transform="translate(');
+  });
+
   it('are deterministic', () => {
     expect(demoObservationDefs()).toEqual(demoObservationDefs());
   });
   it('are always labelled as demo data', () => {
     expect(DEMO_SHOPS.every((s) => s.is_demo && s.provenance === 'demo' && s.name.startsWith('Demo'))).toBe(true);
     expect(demoObservations('2026-10-11').every((o) => o.is_demo && o.source === 'demo' && o.corroborating_reports === 0)).toBe(true);
+  });
+  it('includes demo observations for dessert and drink products', () => {
+    const productIds = new Set(demoObservationDefs().map((observation) => observation.product_id));
+    expect([...productIds]).toEqual(expect.arrayContaining(['baklava', 'orange-juice', 'water']));
   });
   it('stay within the plausibility bounds the server enforces', () => {
     for (const o of demoObservations('2026-10-11')) {

@@ -48,6 +48,10 @@ States shown in the UI:
 - **older**: still current, but flagged
 - **stale**: kept in history and shown under "Older observations"; never shown as a current price and never "lowest"
 
+The category artwork uses Font Awesome Free Solid SVG icon definitions from
+`@fortawesome/free-solid-svg-icons` (CC BY 4.0; Fonticons, Inc.;
+https://fontawesome.com/license/free).
+
 Change thresholds in `src/data/reference/catalog.ts`, then run `npm run seed:generate` and re-run the categories part of `seed.sql`.
 
 ## Report states

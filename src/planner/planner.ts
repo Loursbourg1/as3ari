@@ -54,6 +54,42 @@ export interface PlannedMeal {
   day: number; // 1..7
   slot: MealSlot;
   recipeId: string;
+  /** Extra item requested by the user and included with this meal. */
+  priorityIngredientId?: string;
+}
+
+/** Ensure a prioritized ingredient appears in a meal, when an allowed recipe exists. */
+export function ensurePriorityIngredientMeal(
+  meals: PlannedMeal[],
+  ingredientId: string,
+  recipes: Recipe[],
+  ingredients: Ingredient[],
+  excludedTags: DietTag[],
+): PlannedMeal[] | null {
+  const recipeById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
+  if (meals.some((meal) => recipeById.get(meal.recipeId)?.ingredients.some((item) => item.ingredient_id === ingredientId))) {
+    return meals;
+  }
+
+  const ingredientById = new Map(ingredients.map((ingredient) => [ingredient.id, ingredient]));
+  const recipe = recipes.find((candidate) =>
+    candidate.ingredients.some((item) => item.ingredient_id === ingredientId) &&
+    candidate.meal_slots.length > 0 &&
+    candidate.ingredients.every((item) =>
+      !ingredientById.get(item.ingredient_id)?.diet_tags.some((tag) => excludedTags.includes(tag)),
+    ),
+  );
+  if (recipe) {
+    const targetIndex = meals.findIndex((meal) => recipe.meal_slots.includes(meal.slot));
+    if (targetIndex < 0) return null;
+    return meals.map((meal, index) => index === targetIndex ? { ...meal, recipeId: recipe.id } : meal);
+  }
+
+  const ingredient = ingredientById.get(ingredientId);
+  if (!ingredient || ingredient.diet_tags.some((tag) => excludedTags.includes(tag))) return null;
+  const targetIndex = meals.findIndex((meal) => !meal.priorityIngredientId);
+  if (targetIndex < 0) return null;
+  return meals.map((meal, index) => index === targetIndex ? { ...meal, priorityIngredientId: ingredientId } : meal);
 }
 
 export type Suggestion =

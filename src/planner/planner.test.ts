@@ -6,7 +6,8 @@ import { CATEGORIES, INGREDIENTS, PRODUCTS } from '../data/reference/catalog';
 import { RECIPES } from '../data/reference/recipes';
 import { estimateIngredientPrices } from './prices';
 import { aggregateIngredients, buildShoppingLines, lineCost, pantryToBase, summarizeCosts } from './shoppingList';
-import { eligibleRecipes, generateMealPlan, type PlannerInput } from './planner';
+import { eligibleRecipes, ensurePriorityIngredientMeal, generateMealPlan, type PlannerInput } from './planner';
+import { recalculatePlan } from './aiPlanner';
 
 const TODAY = '2026-10-11';
 const recipe = (id: string) => RECIPES.find((r) => r.id === id)!;
@@ -26,6 +27,11 @@ const prices = (obs: PriceObservation[]) =>
 const base: PlannerInput = { householdSize: 4, budget: '20000', pantry: [], excludedTags: [], excludedIngredients: [], preferredIngredients: [] };
 
 describe('recipe catalogue integrity', () => {
+  it('includes dessert and drink categories and their products', () => {
+    expect(CATEGORIES.map((category) => category.id)).toEqual(expect.arrayContaining(['desserts', 'drinks']));
+    expect(PRODUCTS.map((product) => product.id)).toEqual(expect.arrayContaining(['baklava', 'orange-juice', 'water']));
+  });
+
   it('every recipe ingredient exists and uses a unit of the right dimension', () => {
     const ing = new Map(INGREDIENTS.map((i) => [i.id, i]));
     for (const r of RECIPES) {
@@ -191,5 +197,38 @@ describe('generateMealPlan', () => {
 
   it('eligibleRecipes filters by tags', () => {
     expect(eligibleRecipes(RECIPES, INGREDIENTS, { excludedTags: ['egg'], excludedIngredients: [] }).some((r) => r.id === 'chakchouka')).toBe(false);
+  });
+});
+
+describe('priority ingredient meal', () => {
+  it('replaces a meal with an allowed recipe that contains the requested ingredient', () => {
+    const meals = [{ day: 1, slot: 'lunch' as const, recipeId: 'lentil-stew' }];
+    const plan = ensurePriorityIngredientMeal(meals, 'potato', RECIPES, INGREDIENTS, []);
+    expect(plan).not.toBeNull();
+    const chosen = RECIPES.find((r) => r.id === plan![0]!.recipeId)!;
+    expect(chosen.ingredients.some((item) => item.ingredient_id === 'potato')).toBe(true);
+    expect(chosen.meal_slots).toContain('lunch');
+  });
+
+  it('does not override exclusions when no compatible recipe exists', () => {
+    const meals = [{ day: 1, slot: 'lunch' as const, recipeId: 'lentil-stew' }];
+    expect(ensurePriorityIngredientMeal(meals, 'sardines', RECIPES, INGREDIENTS, ['fish'])).toBeNull();
+  });
+
+  it('adds a priority drink as a meal extra and includes it in the shopping estimate', () => {
+    const meals = [{ day: 1, slot: 'lunch' as const, recipeId: 'lentil-stew' }];
+    const prioritized = ensurePriorityIngredientMeal(meals, 'orange-juice', RECIPES, INGREDIENTS, []);
+    expect(prioritized?.[0]?.priorityIngredientId).toBe('orange-juice');
+
+    const result = recalculatePlan(
+      prioritized!,
+      4,
+      null,
+      [],
+      { categories: CATEGORIES, products: PRODUCTS, ingredients: INGREDIENTS, recipes: RECIPES, wilayas: [], areas: [] },
+      prices(uniformObservations()),
+    );
+    expect(result.lines.find((line) => line.ingredientId === 'orange-juice')?.requiredBase).toBe('1000.00');
+    expect(result.lines.find((line) => line.ingredientId === 'orange-juice')?.cost).toBe('100.00');
   });
 });
