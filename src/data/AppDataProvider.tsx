@@ -6,7 +6,7 @@ import { todayInAlgeria } from '../domain/dates';
 import type { LatLng } from '../domain/geo';
 import type { Catalog, Shop, Wilaya } from '../domain/types';
 import { readJson, writeJson } from '../platform/platform';
-import { PILOT_WILAYA_CODE } from './reference/geography';
+import { DEFAULT_WILAYA_CODE } from './reference/geography';
 import { createDemoRepository } from './demoRepository';
 import { createSupabaseContributionApi, createSupabaseRepository } from './supabaseRepository';
 import type { AreaCoverage, ContributionApi, PriceRepository } from './repository';
@@ -40,7 +40,7 @@ export function AppDataProvider({ children, repository }: { children: ReactNode;
   const r = repository ?? repo;
   const [wilayaCode, setCode] = useState<number>(() => {
     const saved = readJson<number | null>('as3ari.wilaya', null);
-    return typeof saved === 'number' && saved >= 1 && saved <= 99 ? saved : PILOT_WILAYA_CODE;
+    return typeof saved === 'number' && saved >= 1 && saved <= 99 ? saved : DEFAULT_WILAYA_CODE;
   });
   const [origin, setOrigin] = useState<LatLng | null>(null);
   const today = useMemo(() => todayInAlgeria(), []);

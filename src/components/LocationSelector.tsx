@@ -3,7 +3,7 @@ import { ChevronDown, MapPin, X } from 'lucide-react';
 import { normalizeText } from '../domain/search';
 import { useAppData } from '../data/AppDataProvider';
 import { useI18n } from '../i18n/I18nProvider';
-import { Badge, cx } from './ui';
+import { cx } from './ui';
 
 export function LocationSelector({ compact = false }: { compact?: boolean }) {
   const { t, name } = useI18n();
@@ -14,7 +14,7 @@ export function LocationSelector({ compact = false }: { compact?: boolean }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const list = useMemo(() => {
-    const all = [...(catalog.data?.wilayas ?? [])].sort((a, b) => Number(b.is_pilot) - Number(a.is_pilot) || a.code - b.code);
+    const all = [...(catalog.data?.wilayas ?? [])].sort((a, b) => a.code - b.code);
     const nq = normalizeText(q);
     return nq ? all.filter((w) => [w.name_en, w.name_fr, w.name_ar, String(w.code)].some((s) => normalizeText(s).includes(nq))) : all;
   }, [catalog.data, q]);
@@ -90,7 +90,6 @@ export function LocationSelector({ compact = false }: { compact?: boolean }) {
                   >
                     <span className="num w-7 text-xs font-semibold text-muted">{String(w.code).padStart(2, '0')}</span>
                     <span className="flex-1 font-medium">{name(w)}</span>
-                    {w.is_pilot && <Badge tone="brand">{t('location.pilot')}</Badge>}
                   </button>
                 </li>
               ))}

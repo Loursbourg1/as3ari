@@ -130,11 +130,7 @@ export function createDemoRepository(today = todayInAlgeria()): PriceRepository 
     listFeed: (q) => {
       let items = observations;
       if (q.wilayaCode !== undefined) {
-        const filtered = items.filter((o) => o.wilaya_code === q.wilayaCode);
-        // If the selected wilaya has demo data or community data, use it; otherwise fall back to all observations so demo mode is never empty
-        if (filtered.length > 0) {
-          items = filtered;
-        }
+        items = items.filter((o) => o.wilaya_code === q.wilayaCode);
       }
       if (q.areaId) {
         items = items.filter((o) => o.area_id === q.areaId);

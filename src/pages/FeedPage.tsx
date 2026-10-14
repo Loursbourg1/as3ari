@@ -118,6 +118,10 @@ export default function FeedPage() {
     [cat, repo, wilayaCode, selectedCommune, selectedCategory, searchQuery, sortKey, offset],
   );
 
+  useEffect(() => {
+    setSelectedCommune('all');
+  }, [wilayaCode]);
+
   // Reload when filters change or returning to feed
   useEffect(() => {
     if (cat) {
@@ -341,9 +345,7 @@ export default function FeedPage() {
               const qtyText = `${obs.quantity} ${t(`common.unit.${obs.unit}` as MessageKey)}`;
               const dateText = formatDate(obs.observed_on, locale);
               const communeName = obs.area_id ? areaMap.get(obs.area_id) : null;
-              const displayLocation = [obs.location_label, communeName, currentWilayaName]
-                .filter(Boolean)
-                .join(', ');
+              const displayLocation = [obs.location_label, communeName].filter(Boolean).join(', ') || currentWilayaName;
 
               const cardPhoto = obs.photo_url || demoPhotoUrl(obs.product_id, obs.price);
 
@@ -658,13 +660,7 @@ export default function FeedPage() {
                   <div>
                     <span className="font-bold text-ink block">{t('feed.where')}</span>
                     <span className="text-ink-2">
-                      {[
-                        selectedObservation.location_label,
-                        selectedAreaName,
-                        currentWilayaName,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
+                      {[selectedObservation.location_label, selectedAreaName, currentWilayaName].filter(Boolean).join(' · ')}
                     </span>
                     {selectedObservation.lat && selectedObservation.lng && (
                       <a

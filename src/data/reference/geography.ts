@@ -1,10 +1,9 @@
 import type { LocalArea, Wilaya } from '../../domain/types';
 
 /**
- * Algeria's 58 wilayas (2019 administrative division) — reference data only.
- * Being listed here does NOT mean a wilaya has any price data.
- * Map centres are only set for the pilot area; other wilayas fall back to a national view.
- * If the administrative division changes, update this file and regenerate the seed.
+ * Algeria's 58 wilayas (2019 administrative division). Reference data only.
+ * Being listed here does not mean a wilaya has price data yet.
+ * Map centres are chef-lieu approximations for every wilaya.
  */
 const W: [number, string, string, string][] = [
   [1, 'Adrar', 'Adrar', 'أدرار'],
@@ -67,26 +66,44 @@ const W: [number, string, string, string][] = [
   [58, 'El Meniaa', 'El Meniaa', 'المنيعة'],
 ];
 
-/** Pilot area. Centre is the approximate city centre of Djelfa, used only to position the map. */
-const PILOT = { code: 17, center_lat: 34.6704, center_lng: 3.2503, default_zoom: 14 };
+/** Chef-lieu map centres [lat, lng] keyed by wilaya code. */
+const CENTERS: Record<number, readonly [number, number]> = {
+  1: [27.874, -0.294], 2: [36.165, 1.335], 3: [33.8, 2.865], 4: [35.875, 7.114],
+  5: [35.555, 6.174], 6: [36.751, 5.084], 7: [34.85, 5.728], 8: [31.616, -2.217],
+  9: [36.47, 2.828], 10: [36.375, 3.901], 11: [22.785, 5.522], 12: [35.404, 8.124],
+  13: [34.888, -1.314], 14: [35.371, 1.317], 15: [36.711, 4.046], 16: [36.754, 3.059],
+  17: [34.67, 3.25], 18: [36.821, 5.766], 19: [36.191, 5.414], 20: [34.83, 0.152],
+  21: [36.879, 6.906], 22: [35.202, -0.63], 23: [36.9, 7.767], 24: [36.462, 7.433],
+  25: [36.365, 6.614], 26: [36.267, 2.75], 27: [35.931, 0.089], 28: [35.705, 4.542],
+  29: [35.396, 0.14], 30: [31.949, 5.325], 31: [35.697, -0.633], 32: [33.68, 1.02],
+  33: [26.509, 8.482], 34: [36.073, 4.761], 35: [36.766, 3.477], 36: [36.767, 8.314],
+  37: [27.671, -8.147], 38: [35.607, 1.811], 39: [33.368, 6.867], 40: [35.436, 7.143],
+  41: [36.286, 7.951], 42: [36.589, 2.447], 43: [36.45, 6.267], 44: [36.264, 1.968],
+  45: [33.267, -0.311], 46: [35.297, -1.14], 47: [32.489, 3.673], 48: [35.737, 0.556],
+  49: [29.258, 0.241], 50: [21.329, 0.954], 51: [34.428, 5.07], 52: [30.131, -2.169],
+  53: [27.197, 2.482], 54: [19.572, 5.772], 55: [33.105, 6.056], 56: [24.555, 9.484],
+  57: [33.951, 5.922], 58: [30.583, 2.883],
+};
 
-export const WILAYAS: Wilaya[] = W.map(([code, name_en, name_fr, name_ar]) => ({
-  code,
-  name_en,
-  name_fr,
-  name_ar,
-  center_lat: code === PILOT.code ? PILOT.center_lat : null,
-  center_lng: code === PILOT.code ? PILOT.center_lng : null,
-  default_zoom: code === PILOT.code ? PILOT.default_zoom : null,
-  is_pilot: code === PILOT.code,
-}));
+export const WILAYAS: Wilaya[] = W.map(([code, name_en, name_fr, name_ar]) => {
+  const c = CENTERS[code]!;
+  return {
+    code,
+    name_en,
+    name_fr,
+    name_ar,
+    center_lat: c[0],
+    center_lng: c[1],
+    default_zoom: 12,
+    is_pilot: false,
+  };
+});
 
-export const PILOT_WILAYA_CODE = PILOT.code;
+/** Default map/home wilaya when the visitor has not chosen one yet (Algiers). */
+export const DEFAULT_WILAYA_CODE = 16;
 
-/** National overview used when a wilaya has no configured map centre. */
-export const ALGERIA_VIEW = { lat: 31.5, lng: 2.8, zoom: 5 };
+export const ALGERIA_VIEW = { lat: 28.0, lng: 3.0, zoom: 5 };
 
-/** Communes of the pilot wilaya that are referenced so far. Extend through the seed/import process. */
 export const LOCAL_AREAS: LocalArea[] = [
   { id: 'djelfa', wilaya_code: 17, kind: 'commune', name_en: 'Djelfa', name_fr: 'Djelfa', name_ar: 'الجلفة' },
   { id: 'ain-oussara', wilaya_code: 17, kind: 'commune', name_en: 'Aïn Oussara', name_fr: 'Aïn Oussara', name_ar: 'عين وسارة' },
