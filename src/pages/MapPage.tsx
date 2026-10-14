@@ -126,7 +126,7 @@ const PictureCardPin = memo(function PictureCardPin({
 
 export default function MapPage() {
   const { t, name, locale } = useI18n();
-  const { repo, catalog, wilayaCode, wilaya } = useAppData();
+  const { repo, catalog, wilayaCode, wilaya, priceRevision } = useAppData();
   const cat = catalog.data;
 
   const [selectedProductFilter, setSelectedProductFilter] = useState<string>('all');
@@ -170,7 +170,7 @@ export default function MapPage() {
     if (cat) {
       loadData();
     }
-  }, [cat, wilayaCode, loadData]);
+  }, [cat, wilayaCode, loadData, priceRevision]);
 
   // Center coordinates: selected Wilaya center or national Algeria center
   const mapCenter = useMemo<[number, number]>(() => {

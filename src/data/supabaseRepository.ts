@@ -355,7 +355,7 @@ export function createSupabaseContributionApi(client: SupabaseClient, _opts?: { 
           }
         }
 
-        const { data, error } = await client.rpc('submit_report_with_location', {
+        const { data, error } = await client.rpc('submit_report_with_location_and_region', {
           p_product_id: v.product_id,
           p_price: v.price,
           p_quantity: v.quantity,
@@ -369,6 +369,8 @@ export function createSupabaseContributionApi(client: SupabaseClient, _opts?: { 
           p_reporter_name: v.is_anonymous ? null : (v.reporter_name ?? null),
           p_custom_product_name: v.custom_product_name ?? null,
           p_custom_product_category: v.custom_product_category ?? null,
+          p_wilaya_code: v.wilaya_code ?? null,
+          p_area_id: v.area_id ?? null,
         });
         if (error) fail(error);
         const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown>;

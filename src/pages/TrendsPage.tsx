@@ -7,7 +7,7 @@ import { ErrorState, PageContainer, Spinner } from '../components/ui';
 
 export default function TrendsPage() {
   const { name } = useI18n();
-  const { repo, catalog, wilayaCode, wilaya } = useAppData();
+  const { repo, catalog, wilayaCode, wilaya, priceRevision } = useAppData();
   const cat = catalog.data;
 
   const [observations, setObservations] = useState<PriceObservation[]>([]);
@@ -36,7 +36,7 @@ export default function TrendsPage() {
     if (cat) {
       loadObservations();
     }
-  }, [cat, wilayaCode, loadObservations]);
+  }, [cat, wilayaCode, loadObservations, priceRevision]);
 
   if (!cat) {
     return (

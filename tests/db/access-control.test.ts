@@ -248,9 +248,10 @@ describe('moderation, flags and corroboration', () => {
   it('shows self-reported (no shop) pending reports in the moderation queue', async () => {
     const submitted = await as(db, user(alice), () =>
       db.query<{ id: string }>(
-        `select id from public.submit_report_with_location(
+        `select id from public.submit_report_with_location_and_region(
           'onions'::text, 80::numeric, 1::numeric, 'kg'::public.unit_code, $1::date, 'Souk El Djemaa'::text,
-          34.67::numeric, 3.25::numeric, null::text, true, null::text, null::text, null::text
+          null::numeric, null::numeric, null::text, true, null::text, null::text, null::text,
+          17::smallint, 'djelfa'::text
         )`,
         [today],
       ),
@@ -264,9 +265,17 @@ describe('moderation, flags and corroboration', () => {
     expect(row!.shop_name).toBe('Souk El Djemaa');
     await as(db, user(admin), () => db.query(`select public.moderate_price_report($1, 'approve')`, [id]));
     const pub = await as(db, ANON, () =>
-      db.query(`select id from public.public_price_observations where id = $1 and wilaya_code = 17`, [id]),
+      db.query(`select id from public.public_price_observations where id = $1 and wilaya_code = 17 and area_id = 'djelfa'`, [id]),
     );
     expect(pub.rows).toHaveLength(1);
+    const broadcast = await db.query<{ event: string; payload: Record<string, unknown>; is_private: boolean }>(
+      `select event, payload, is_private from realtime.messages where topic = 'public-price-reports'`,
+    );
+    expect(broadcast.rows.at(-1)).toEqual({
+      event: 'approved',
+      payload: { type: 'price_report_approved' },
+      is_private: false,
+    });
   });
 
   it('moderators cannot be bypassed by invalid transitions', async () => {

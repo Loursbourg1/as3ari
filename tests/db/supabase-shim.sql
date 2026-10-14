@@ -23,6 +23,20 @@ grant usage on schema auth to anon, authenticated, service_role;
 grant execute on function auth.uid() to anon, authenticated, service_role;
 grant usage on schema public to anon, authenticated, service_role;
 
+create schema realtime;
+create table realtime.messages (
+  topic text not null,
+  event text not null,
+  payload jsonb not null,
+  is_private boolean not null
+);
+create function realtime.send(payload jsonb, event text, topic text, private boolean default true)
+returns void
+language plpgsql
+as $$ begin
+  insert into realtime.messages (topic, event, payload, is_private) values (topic, event, payload, private);
+end $$;
+
 alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated, service_role;

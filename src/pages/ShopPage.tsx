@@ -13,10 +13,10 @@ const PAGE = 50;
 export default function ShopPage() {
   const { id = '' } = useParams();
   const { t, name } = useI18n();
-  const { catalog, repo, today } = useAppData();
+  const { catalog, repo, today, priceRevision } = useAppData();
   const [pages, setPages] = useState(1);
   const shop = useAsync(() => repo.getShop(id), [repo, id]);
-  const obs = useAsync(() => repo.listObservations({ shopId: id, limit: PAGE * pages, offset: 0 }), [repo, id, pages]);
+  const obs = useAsync(() => repo.listObservations({ shopId: id, limit: PAGE * pages, offset: 0 }), [repo, id, pages, priceRevision]);
   const shopMap = useMemo(() => new Map(shop.data ? [[shop.data.id, shop.data]] : []), [shop.data]);
 
   if (!catalog.data || (shop.status === 'loading' && !shop.data)) return <Spinner />;

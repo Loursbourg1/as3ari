@@ -36,7 +36,7 @@ function priceText(v: string): string {
 
 export default function ExplorePage({ mode }: { mode: 'explore' | 'map' }) {
   const { t, name, locale } = useI18n();
-  const { catalog, shops, coverage, wilaya, wilayaCode, today, origin, setOrigin, repo } = useAppData();
+  const { catalog, repo, wilayaCode, wilaya, shops, today, coverage, origin, setOrigin, priceRevision } = useAppData();
   const [params, setParams] = useSearchParams();
   const [sheet, setSheet] = useState<SheetState>(mode === 'explore' ? 'half' : 'peek');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -84,7 +84,7 @@ export default function ExplorePage({ mode }: { mode: 'explore' | 'map' }) {
 
   const productObs = useAsync(
     () => (product ? repo.listObservations({ wilayaCode, productIds: [product.id], limit: OBS_LIMIT, offset: 0 }) : Promise.resolve(null)),
-    [repo, product?.id, wilayaCode],
+    [repo, product?.id, wilayaCode, priceRevision],
   );
 
   const comparison = useMemo(() => {

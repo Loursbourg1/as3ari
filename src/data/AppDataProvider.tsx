@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { config } from '../config/env';
 import { supabase } from '../lib/supabase';
 import { useAsync, type AsyncState } from '../lib/useAsync';
@@ -15,6 +15,7 @@ interface AppData {
   repo: PriceRepository;
   contributions: ContributionApi;
   today: string;
+  priceRevision: number;
   catalog: AsyncState<Catalog> & { reload: () => void };
   wilayaCode: number;
   wilaya: Wilaya | undefined;
@@ -43,6 +44,20 @@ export function AppDataProvider({ children, repository }: { children: ReactNode;
     return typeof saved === 'number' && saved >= 1 && saved <= 99 ? saved : DEFAULT_WILAYA_CODE;
   });
   const [origin, setOrigin] = useState<LatLng | null>(null);
+  const [priceRevision, setPriceRevision] = useState(0);
+
+  useEffect(() => {
+    const client = supabase;
+    if (!client) return;
+    const channel = client
+      .channel('public-price-reports')
+      .on('broadcast', { event: 'approved' }, () => setPriceRevision((revision) => revision + 1))
+      .subscribe();
+    return () => {
+      void client.removeChannel(channel);
+    };
+  }, []);
+
   const today = useMemo(() => todayInAlgeria(), []);
 
   const catalog = useAsync(() => r.loadCatalog(), [r]);
@@ -59,6 +74,7 @@ export function AppDataProvider({ children, repository }: { children: ReactNode;
       repo: r,
       contributions,
       today,
+      priceRevision,
       catalog,
       wilayaCode,
       wilaya: catalog.data?.wilayas.find((w) => w.code === wilayaCode),
@@ -68,7 +84,7 @@ export function AppDataProvider({ children, repository }: { children: ReactNode;
       origin,
       setOrigin,
     }),
-    [r, today, catalog, wilayaCode, setWilayaCode, shops, coverage, origin],
+    [r, today, priceRevision, catalog, wilayaCode, setWilayaCode, shops, coverage, origin],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

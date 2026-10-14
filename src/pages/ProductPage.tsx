@@ -17,13 +17,13 @@ const PAGE = 50;
 export default function ProductPage() {
   const { id } = useParams();
   const { t, name, variant } = useI18n();
-  const { catalog, repo, wilayaCode, wilaya, shops, today } = useAppData();
+  const { catalog, repo, wilayaCode, wilaya, shops, today, priceRevision } = useAppData();
   const [pages, setPages] = useState(1);
   const product = catalog.data?.products.find((p) => p.id === id);
 
   const obs = useAsync(
     () => (product ? repo.listObservations({ wilayaCode, productIds: [product.id], limit: PAGE * pages, offset: 0 }) : Promise.resolve(null)),
-    [repo, product?.id, wilayaCode, pages],
+    [repo, product?.id, wilayaCode, pages, priceRevision],
   );
 
   const shopMap = useMemo(() => new Map((shops.data ?? []).map((s) => [s.id, s])), [shops.data]);

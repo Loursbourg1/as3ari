@@ -37,7 +37,7 @@ function formatPriceNumber(v: string): string {
 
 export default function FeedPage() {
   const { t, locale, name, variant } = useI18n();
-  const { repo, catalog, wilayaCode, wilaya } = useAppData();
+  const { repo, catalog, wilayaCode, wilaya, priceRevision } = useAppData();
   const location = useLocation();
   const cat = catalog.data;
 
@@ -116,7 +116,7 @@ export default function FeedPage() {
         setLoading(false);
       }
     },
-    [cat, repo, isNational, wilayaCode, selectedCommune, selectedCategory, searchQuery, sortKey, offset],
+    [cat, repo, isNational, wilayaCode, selectedCommune, selectedCategory, searchQuery, sortKey, offset, priceRevision],
   );
 
   useEffect(() => {
@@ -129,7 +129,7 @@ export default function FeedPage() {
       loadFeed(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cat, isNational, wilayaCode, selectedCategory, selectedCommune, sortKey, location.key]);
+  }, [cat, isNational, wilayaCode, selectedCategory, selectedCommune, sortKey, location.key, priceRevision]);
 
   // Debounced search trigger
   useEffect(() => {
