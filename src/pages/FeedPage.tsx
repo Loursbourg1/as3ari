@@ -5,8 +5,9 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  ExternalLink,
+  Copy,
   MapPin,
+  Navigation,
   PlusCircle,
   RefreshCw,
   Search,
@@ -57,6 +58,7 @@ export default function FeedPage() {
 
   // Active detail modal
   const [selectedObservation, setSelectedObservation] = useState<PriceObservation | null>(null);
+  const [locationCopied, setLocationCopied] = useState(false);
 
   // Ratings cache for live voting
   const [ratingsMap, setRatingsMap] = useState<Record<string, ReportRating>>({});
@@ -230,7 +232,7 @@ export default function FeedPage() {
         </div>
 
         {/* Secondary filters row: Scope toggle (Wilaya vs All Algeria), Commune selector & Sorting */}
-        <div className="mt-2.5 flex items-center justify-between gap-2 text-xs">
+        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex min-w-0 flex-1 items-center gap-1.5">
             <button
               type="button"
@@ -244,28 +246,6 @@ export default function FeedPage() {
               <MapPin className="size-3.5 shrink-0 text-brand-600" />
               <span>{isNational ? t('feed.allAlgeria') : currentWilayaName}</span>
             </button>
-            {!isNational && (
-              <>
-                <span className="text-muted/60 hidden sm:inline">·</span>
-                {communesInWilaya.length > 0 && (
-                  <div className="min-w-0 flex-1 max-w-[200px]">
-                    <Select
-                      value={selectedCommune}
-                      onChange={(e) => setSelectedCommune(e.target.value)}
-                      aria-label={t('feed.allAreas')}
-                      className="h-8 w-full min-w-0 py-0 ps-2.5 pe-7 text-xs font-semibold rounded-xl border-line bg-surface shadow-2xs hover:bg-canvas transition-colors"
-                    >
-                      <option value="all">{t('feed.allAreas')}</option>
-                      {communesInWilaya.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {name(a)}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                )}
-              </>
-            )}
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
@@ -280,6 +260,21 @@ export default function FeedPage() {
               <option value="price">{t('feed.sortPrice')}</option>
             </Select>
           </div>
+          {!isNational && communesInWilaya.length > 0 && (
+            <div className="basis-full min-w-0 sm:basis-auto sm:flex-1 sm:max-w-[240px]">
+              <Select
+                value={selectedCommune}
+                onChange={(e) => setSelectedCommune(e.target.value)}
+                aria-label={t('feed.allAreas')}
+                className="h-9 w-full min-w-0 py-0 ps-3 pe-8 text-sm font-semibold rounded-xl border-line bg-surface hover:bg-canvas"
+              >
+                <option value="all">{t('feed.allAreas')}</option>
+                {communesInWilaya.map((a) => (
+                  <option key={a.id} value={a.id}>{name(a)}</option>
+                ))}
+              </Select>
+            </div>
+          )}
         </div>
       </div>
 
@@ -675,17 +670,42 @@ export default function FeedPage() {
                     <span className="text-ink-2">
                       {[selectedObservation.location_label, selectedAreaName, currentWilayaName].filter(Boolean).join(' · ')}
                     </span>
-                    {selectedObservation.lat && selectedObservation.lng && (
-                      <a
-                        href={`https://www.google.com/maps?q=${selectedObservation.lat},${selectedObservation.lng}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-1 inline-flex items-center gap-1 font-semibold text-brand-700 hover:underline"
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {(selectedObservation.lat != null && selectedObservation.lng != null || selectedObservation.location_label) && (
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+                            selectedObservation.lat != null && selectedObservation.lng != null
+                              ? `${selectedObservation.lat},${selectedObservation.lng}`
+                              : [selectedObservation.location_label, selectedAreaName, currentWilayaName].filter(Boolean).join(', '),
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-line-strong bg-surface px-3 text-xs font-semibold text-ink hover:bg-canvas"
+                        >
+                          <Navigation className="size-3.5 text-brand-600" />
+                          {t('feed.takeMeThere')}
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const location = selectedObservation.lat != null && selectedObservation.lng != null
+                            ? `${selectedObservation.lat}, ${selectedObservation.lng}`
+                            : [selectedObservation.location_label, selectedAreaName, currentWilayaName].filter(Boolean).join(', ');
+                          try {
+                            await navigator.clipboard.writeText(location);
+                            setLocationCopied(true);
+                            window.setTimeout(() => setLocationCopied(false), 1800);
+                          } catch {
+                            setLocationCopied(false);
+                          }
+                        }}
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-line-strong bg-surface px-3 text-xs font-semibold text-ink hover:bg-canvas"
                       >
-                        <ExternalLink className="size-3" />
-                        View map pin
-                      </a>
-                    )}
+                        <Copy className="size-3.5" />
+                        {locationCopied ? t('feed.locationCopied') : t('feed.copyLocation')}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
