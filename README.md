@@ -1,8 +1,8 @@
 # As3ari (أسعاري)
 Never overpay for basic food.
 The same groceries can cost different amounts at different shops. As3ari helps people discover those differences before they spend their money.
-As3ari is a community-driven grocery price platform built for Algeria. People can discover local prices and contribute price reports, turning information that usually stays with one shopper into something the whole community can use. Ratings, report verification, and transparency help people judge how trustworthy that information is.
-But finding cheaper groceries is only the beginning. As3ari aims to help households plan affordable, nutritious weekly meals, make better use of limited budgets, and discover unexpected sources of fresh produce from neighborhood markets and roadside sellers.
+As3ari is a community-driven grocery price platform. People can discover local prices and contribute price reports, turning information that usually stays with one shopper into something the whole community can use. Ratings, report verification, and transparency help people judge how trustworthy that information is.
+Finding cheaper groceries is only the beginning. As3ari aims to help households plan affordable, nutritious weekly meals, make better use of limited budgets, and discover unexpected sources of fresh produce from neighborhood markets and roadside sellers.
 The vision is simple: give people better information, and give them more control over their money.
 ## Table of contents
 
