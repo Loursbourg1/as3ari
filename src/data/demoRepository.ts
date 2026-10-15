@@ -118,6 +118,7 @@ export function createDemoRepository(today = todayInAlgeria()): PriceRepository 
     isModerator: () => Promise.resolve(true),
     moderationQueue: () => delay([]),
     moderate: () => delay('approved'),
+    deleteReport: () => delay(undefined),
   };
 
   return {

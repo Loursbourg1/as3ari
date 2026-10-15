@@ -18,6 +18,7 @@ import { config } from '../config/env';
 import { useAppData } from '../data/AppDataProvider';
 import { useI18n } from '../i18n/I18nProvider';
 import { formatDate } from '../domain/dates';
+import { formatLocationForClipboard, reportMapLocation } from '../domain/geo';
 import type { PriceObservation, Product } from '../domain/types';
 import { demoPhotoUrl } from '../data/demo/photos';
 import { getReportRating, voteReport, getAccuracyPct, type ReportRating } from '../data/ratings';
@@ -50,6 +51,11 @@ interface PictureCardPinProps {
   isSelected: boolean;
   onSelect: (obs: PriceObservation) => void;
 }
+
+type DisplayPin = PriceObservation & {
+  displayLat: number;
+  displayLng: number;
+};
 
 const PictureCardPin = memo(function PictureCardPin({
   obs,
@@ -198,15 +204,28 @@ export default function MapPage() {
   // Priority pins: User reports first, then newest, capped at top 60 for snappy 60fps mobile rendering.
   // Nearby pins are subtly spread apart so dense clusters remain readable.
   const displayPins = useMemo(() => {
+    const wilayas = cat?.wilayas ?? [];
     const newest = filteredObservations
-      .filter((observation) => observation.lat != null && observation.lng != null)
+      .flatMap((observation): DisplayPin[] => {
+        const location = reportMapLocation(
+          { lat: observation.lat, lng: observation.lng, wilayaCode: observation.wilaya_code },
+          wilayas,
+        );
+        return location
+          ? [{
+              ...observation,
+              displayLat: location.position.lat,
+              displayLng: location.position.lng,
+            }]
+          : [];
+      })
       .sort((a, b) => {
         if (!a.is_demo && b.is_demo) return -1;
         if (a.is_demo && !b.is_demo) return 1;
         return b.observed_on.localeCompare(a.observed_on);
       });
 
-    const byWilaya = new Map<string, PriceObservation[]>();
+    const byWilaya = new Map<string, DisplayPin[]>();
     for (const observation of newest) {
       const key = observation.wilaya_code === null ? 'unknown' : String(observation.wilaya_code);
       const group = byWilaya.get(key) ?? [];
@@ -215,7 +234,7 @@ export default function MapPage() {
     }
 
     // Give each represented wilaya a recent pin before showing a second from any one area.
-    const ranked: PriceObservation[] = [];
+    const ranked: DisplayPin[] = [];
     for (let rank = 0; ranked.length < 60; rank += 1) {
       let added = false;
       for (const group of byWilaya.values()) {
@@ -230,8 +249,8 @@ export default function MapPage() {
 
     const counts = new Map<string, number>();
     return ranked.map((obs) => {
-      const baseLat = obs.lat!;
-      const baseLng = obs.lng!;
+      const baseLat = obs.displayLat;
+      const baseLng = obs.displayLng;
       const key = `${Math.round(baseLat * 100000)}:${Math.round(baseLng * 100000)}`;
       const index = counts.get(key) ?? 0;
       counts.set(key, index + 1);
@@ -239,11 +258,11 @@ export default function MapPage() {
       const radius = index === 0 ? 0 : 0.00016 + index * 0.00008;
       return {
         ...obs,
-        displayLat: baseLat + Math.cos(angle) * radius,
-        displayLng: baseLng + Math.sin(angle) * radius,
+        displayLat: obs.displayLat + Math.cos(angle) * radius,
+        displayLng: obs.displayLng + Math.sin(angle) * radius,
       };
     });
-  }, [filteredObservations, mapCenter]);
+  }, [cat?.wilayas, filteredObservations]);
 
   const productMap = useMemo(() => {
     if (!cat) return new Map<string, Product>();
@@ -289,9 +308,7 @@ export default function MapPage() {
   const currentWilayaName = t('feed.allAlgeria');
 
   const handleCopyLocation = async (obs: PriceObservation) => {
-    const lat = obs.lat ?? mapCenter[0];
-    const lng = obs.lng ?? mapCenter[1];
-    const text = `${obs.location_label ?? 'Price report'} — ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    const text = formatLocationForClipboard({ lat: obs.lat, lng: obs.lng, labels: [obs.location_label] });
     try {
       await navigator.clipboard.writeText(text);
     } catch {
@@ -300,8 +317,12 @@ export default function MapPage() {
   };
 
   const handleDirections = (obs: PriceObservation) => {
-    const lat = obs.lat ?? mapCenter[0];
-    const lng = obs.lng ?? mapCenter[1];
+    const location = reportMapLocation(
+      { lat: obs.lat, lng: obs.lng, wilayaCode: obs.wilaya_code },
+      cat.wilayas,
+    );
+    if (!location) return;
+    const { lat, lng } = location.position;
     const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
@@ -384,10 +405,6 @@ export default function MapPage() {
 
           {/* Render Picture Card Markers on Map (snappy 60fps) */}
           {displayPins.map((obs) => {
-            const displayObs = obs as PriceObservation & { displayLat?: number; displayLng?: number };
-            const pinLat = displayObs.displayLat ?? obs.lat ?? mapCenter[0];
-            const pinLng = displayObs.displayLng ?? obs.lng ?? mapCenter[1];
-
             const prod = productMap.get(obs.product_id);
             const prodName = prod ? name(prod) : obs.product_id;
             const priceNum = Math.round(Number(obs.price));
@@ -397,8 +414,8 @@ export default function MapPage() {
               <PictureCardPin
                 key={obs.id}
                 obs={obs}
-                pinLat={pinLat}
-                pinLng={pinLng}
+                pinLat={obs.displayLat}
+                pinLng={obs.displayLng}
                 prodName={prodName}
                 priceNum={priceNum}
                 photoUrl={photoUrl}
@@ -460,6 +477,12 @@ export default function MapPage() {
                     <MapPin className="size-3.5 text-brand-600" />
                     <span>{selectedPin.location_label}</span>
                   </div>
+                )}
+                {reportMapLocation(
+                  { lat: selectedPin.lat, lng: selectedPin.lng, wilayaCode: selectedPin.wilaya_code },
+                  cat.wilayas,
+                )?.approximate && (
+                  <span className="text-muted">{t('map.approximateLocation')}</span>
                 )}
                 <div className="flex items-center gap-1">
                   <Calendar className="size-3.5" />

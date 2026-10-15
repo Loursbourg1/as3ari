@@ -22,6 +22,7 @@ import {
 import { useAppData } from '../data/AppDataProvider';
 import { useI18n } from '../i18n/I18nProvider';
 import { formatDate } from '../domain/dates';
+import { formatLocationForClipboard } from '../domain/geo';
 import { Big } from '../domain/money';
 import type { PriceObservation, Product } from '../domain/types';
 import type { MessageKey } from '../i18n/en';
@@ -689,9 +690,11 @@ export default function FeedPage() {
                       <button
                         type="button"
                         onClick={async () => {
-                          const location = selectedObservation.lat != null && selectedObservation.lng != null
-                            ? `${selectedObservation.lat}, ${selectedObservation.lng}`
-                            : [selectedObservation.location_label, selectedAreaName, currentWilayaName].filter(Boolean).join(', ');
+                          const location = formatLocationForClipboard({
+                            lat: selectedObservation.lat,
+                            lng: selectedObservation.lng,
+                            labels: [selectedObservation.location_label, selectedAreaName, currentWilayaName],
+                          });
                           try {
                             await navigator.clipboard.writeText(location);
                             setLocationCopied(true);

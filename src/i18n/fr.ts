@@ -15,6 +15,7 @@ export const fr: Record<MessageKey, string> = {
   'nav.account': 'Compte',
   'nav.language': 'Langue',
   'nav.report': 'Signaler un prix',
+  'map.approximateLocation': 'Emplacement approximatif de la wilaya',
 
   'common.loading': 'Chargement…',
   'common.retry': 'Réessayer',
@@ -260,10 +261,14 @@ export const fr: Record<MessageKey, string> = {
   'me.submitted': 'Envoyé le {date}',
 
   'mod.title': 'File de modération',
+  'mod.all': 'Tous les signalements',
   'mod.pending': 'En attente',
   'mod.flagged': 'Signalés (approuvés)',
   'mod.approve': 'Approuver',
   'mod.reject': 'Refuser',
+  'mod.delete': 'Supprimer',
+  'mod.deleteConfirm': 'Supprimer définitivement ce signalement ? Cette action est irréversible.',
+  'mod.loadMore': 'Charger plus de signalements',
   'mod.empty': 'Rien à vérifier.',
   'mod.flags': '{n} signalement(s) ouvert(s)',
   'mod.contributorReports': 'Le contributeur a {n} relevé(s)',

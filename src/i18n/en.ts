@@ -14,6 +14,7 @@ export const en = {
   'nav.account': 'Account',
   'nav.language': 'Language',
   'nav.report': 'Report Price',
+  'map.approximateLocation': 'Approximate wilaya location',
 
   'common.loading': 'Loading…',
   'common.retry': 'Try again',
@@ -259,10 +260,14 @@ export const en = {
   'me.submitted': 'Submitted {date}',
 
   'mod.title': 'Moderation queue',
+  'mod.all': 'All reports',
   'mod.pending': 'Pending',
   'mod.flagged': 'Flagged (approved)',
   'mod.approve': 'Approve',
   'mod.reject': 'Reject',
+  'mod.delete': 'Delete',
+  'mod.deleteConfirm': 'Permanently delete this report? This cannot be undone.',
+  'mod.loadMore': 'Load more reports',
   'mod.empty': 'Nothing to review.',
   'mod.flags': '{n} open flag(s)',
   'mod.contributorReports': 'Contributor has {n} report(s)',

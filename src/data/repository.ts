@@ -80,8 +80,9 @@ export interface ContributionApi {
   myReports(limit: number, offset: number): Promise<MyReport[]>;
   flagReport(input: FlagInput): Promise<void>;
   isModerator(): Promise<boolean>;
-  moderationQueue(status: ReportStatus, flaggedOnly: boolean): Promise<QueueItem[]>;
+  moderationQueue(status: ReportStatus | null, flaggedOnly: boolean, offset?: number): Promise<QueueItem[]>;
   moderate(reportId: string, decision: 'approve' | 'reject', note?: string): Promise<ReportStatus>;
+  deleteReport(reportId: string): Promise<void>;
 }
 
 export class ApiError extends Error {

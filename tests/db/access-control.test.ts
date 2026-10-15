@@ -158,6 +158,7 @@ describe('ordinary users cannot escalate', () => {
     const r = await submit(alice, { product: 'tomatoes', price: '120', qty: '1' });
     await as(db, user(alice), async () => {
       await rejects(db.query(`select public.moderate_price_report($1, 'approve')`, [r.rows[0]!.id]), 'not_allowed');
+      await rejects(db.query(`select public.delete_price_report($1)`, [r.rows[0]!.id]), 'not_allowed');
       await rejects(db.query(`select * from public.moderation_queue()`), 'not_allowed');
     });
   });
@@ -230,6 +231,37 @@ describe('ordinary users cannot escalate', () => {
 });
 
 describe('moderation, flags and corroboration', () => {
+  it('moderators can find and permanently delete reports in every status', async () => {
+    const ids: string[] = [];
+    for (const status of ['pending', 'approved', 'rejected'] as const) {
+      const contributor = await createUser(db);
+      const product = status === 'pending' ? 'garlic' : status === 'approved' ? 'onions' : 'tomatoes';
+      const price = status === 'pending' ? '900' : status === 'approved' ? '70' : '120';
+      const submitted = await submit(contributor, { product, price, qty: '1' });
+      const id = submitted.rows[0]!.id;
+      ids.push(id);
+      if (status !== 'pending') {
+        await as(db, user(admin), () => db.query(`select public.moderate_price_report($1, $2)`, [id, status === 'approved' ? 'approve' : 'reject']));
+      }
+    }
+
+    const queue = await as(db, user(admin), async () => {
+      const rows: { id: string; status: string }[] = [];
+      for (let offset = 0; ; offset += 100) {
+        const page = await db.query<{ id: string; status: string }>(`select id, status from public.moderation_queue(null, false, 100, $1)`, [offset]);
+        rows.push(...page.rows);
+        if (page.rows.length < 100) return rows;
+      }
+    });
+    expect(ids.map((id) => queue.find((row) => row.id === id)?.status)).toEqual(['pending', 'approved', 'rejected']);
+
+    for (const id of ids) {
+      await as(db, user(admin), () => db.query(`select public.delete_price_report($1)`, [id]));
+    }
+    const remaining = await db.query(`select id from public.price_reports where id = any($1::uuid[])`, [ids]);
+    expect(remaining.rows).toHaveLength(0);
+  });
+
   it('admins can approve; approved reports become public; the action is audited', async () => {
     const r = await submit(alice, { product: 'zucchini', price: '110', qty: '1' });
     const id = r.rows[0]!.id;

@@ -417,8 +417,8 @@ export function createSupabaseContributionApi(client: SupabaseClient, _opts?: { 
       if (error) return false;
       return data === true;
     },
-    async moderationQueue(status, flaggedOnly) {
-      const { data, error } = await client.rpc('moderation_queue', { p_status: status, p_flagged_only: flaggedOnly, p_limit: 100, p_offset: 0 });
+    async moderationQueue(status, flaggedOnly, offset = 0) {
+      const { data, error } = await client.rpc('moderation_queue', { p_status: status, p_flagged_only: flaggedOnly, p_limit: 100, p_offset: offset });
       if (error) fail(error);
       return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
         ...mapMyReport({ ...r, rejection_reason: null }),
@@ -427,6 +427,10 @@ export function createSupabaseContributionApi(client: SupabaseClient, _opts?: { 
         open_flags: Number(r.open_flags ?? 0),
         contributor_report_count: Number(r.contributor_report_count ?? 0),
       })) as QueueItem[];
+    },
+    async deleteReport(reportId) {
+      const { error } = await client.rpc('delete_price_report', { p_report_id: reportId });
+      if (error) fail(error);
     },
     async moderate(reportId, decision, note) {
       const { data, error } = await client.rpc('moderate_price_report', { p_report_id: reportId, p_decision: decision, p_note: note ?? null });

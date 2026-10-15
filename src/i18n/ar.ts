@@ -15,6 +15,7 @@ export const ar: Record<MessageKey, string> = {
   'nav.account': 'الحساب',
   'nav.language': 'اللغة',
   'nav.report': 'أبلغ عن سعر',
+  'map.approximateLocation': 'موقع تقريبي على مستوى الولاية',
 
   'common.loading': 'جارٍ التحميل…',
   'common.retry': 'إعادة المحاولة',
@@ -260,10 +261,14 @@ export const ar: Record<MessageKey, string> = {
   'me.submitted': 'أُرسل في {date}',
 
   'mod.title': 'قائمة المراجعة',
+  'mod.all': 'كل البلاغات',
   'mod.pending': 'قيد الانتظار',
   'mod.flagged': 'مُبلغ عنها (معتمدة)',
   'mod.approve': 'اعتماد',
   'mod.reject': 'رفض',
+  'mod.delete': 'حذف',
+  'mod.deleteConfirm': 'هل تريد حذف هذا البلاغ نهائيًا؟ لا يمكن التراجع عن ذلك.',
+  'mod.loadMore': 'تحميل المزيد من البلاغات',
   'mod.empty': 'لا شيء للمراجعة.',
   'mod.flags': '{n} بلاغ(ات) مفتوحة',
   'mod.contributorReports': 'للمساهم {n} بلاغ(ات)',
